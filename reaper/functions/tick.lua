@@ -1,0 +1,14 @@
+-- tick  (not implemented yet; called by the bridge loop every defer tick)
+--
+-- Song end / after stop: when the transport goes from recording/playing to
+-- stopped and a bridge-started take is active:
+--   - save the project (Main_SaveProject); media was saved by the stop
+--   - Live: cursor to the song end, so instruments keep the ended song's
+--     sound; queue the setlist song after the one just played (not loaded)
+--   - Play last: restore input monitoring
+--
+-- Watchdog: still recording more than 2 s past the time selection end ->
+-- "Stop (save all recorded media)" and flag it in status for the page.
+--
+-- args:    none
+-- returns: nothing

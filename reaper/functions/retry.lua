@@ -1,0 +1,6 @@
+-- retry  (not implemented yet)
+--
+-- Record again with the remembered scope and settings of the last take.
+--
+-- args:    { }
+-- returns: same as recordPractice

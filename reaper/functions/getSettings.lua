@@ -1,0 +1,11 @@
+-- getSettings  (not implemented yet)
+--
+-- Band settings stored in project ext state, with defaults when missing.
+--
+-- args:    { }
+-- returns: { tail = seconds after the song region end (default 2),
+--            prerollDefault = bars (default 2),
+--            liveCount = expected number of [Live] tracks,
+--            minDiskGB = minimum free space on the record path }
+--
+-- REAPER API: GetProjExtState

@@ -1,0 +1,14 @@
+-- setPracticeOptions  (not implemented yet)
+--
+-- Practice choices kept in project ext state and applied at once when in
+-- Practice mode (refused while recording):
+--   players  [Live] track guids to record; these are armed, the others
+--            disarmed (their takes play back, their inputs are silent)
+--   mutes    [Live] track guids muted (plain track mute)
+--   rate     master playrate, 0.5 .. 1.2 (preserve pitch on)
+--
+-- args:    { players?, mutes?, rate? }
+-- returns: { players, mutes, rate }
+--
+-- REAPER API: SetMediaTrackInfo_Value (I_RECARM, B_MUTE), CSurf_OnPlayRateChange,
+--             SetProjExtState

@@ -1,0 +1,62 @@
+-- Band Remote bridge  (NOT IMPLEMENTED YET: this file only documents the design)
+--
+-- One persistent background script, started automatically with REAPER from
+-- Scripts/__startup.lua, running a reaper.defer() loop. It is generic: it
+-- knows nothing about songs or setlists. All band logic lives in the web
+-- project (reaper/functions/*.lua) and is uploaded here by the page.
+--
+-- ## Transport: global ext state, section "BandRemote" (never persisted)
+--
+-- Page -> bridge
+--   c0 .. cN-1   Request chunks. Concatenated they are base64url (UTF-8) of
+--                  "<kind> <name>\n<payload>"
+--   req          "<id>:<N>". Written last; the bridge acts on it, then
+--                clears it and deletes the chunks.
+--
+--   kind "def"   name = function name, payload = Lua source of
+--                reaper/functions/<name>.lua exactly as the file is.
+--                The bridge compiles it with load() and keeps it by name.
+--   kind "seal"  name = hash of the whole uploaded set. Published in status
+--                as "lib", so the page knows the upload is complete and
+--                current (re-uploads when its own hash differs).
+--   kind "call"  name = function name, payload = JSON of the arguments.
+--                The bridge decodes the JSON into a Lua table and calls the
+--                function chunk with it: local args = ...
+--
+-- Bridge -> page
+--   resp         "<id>|<M>|<first chunk>". The response JSON, split in M
+--                chunks because GET/EXTSTATE replies are limited to ~16 KB;
+--                chunks 2..M are in resp1 .. resp(M-1).
+--                JSON: { "id": ..., "ok": true, "result": ... }
+--                   or { "id": ..., "ok": false, "error": "message" }
+--   status       JSON, rewritten when it changes:
+--                { "v": bridge version, "session": random id per REAPER run,
+--                  "lib": hash from the last "seal" (or null),
+--                  "hb": heartbeat counter, changes several times a second,
+--                  "err": last loop error (or null),
+--                  "app": table returned by the "status" function }
+--
+-- ## Loop (every defer tick)
+--   1. If "req" holds a new id: read and decode the chunks, run the request
+--      in a protected call (xpcall), write "resp". Errors become
+--      { ok = false, error = message }; they never break the loop.
+--   2. Run the "tick" function if uploaded (song end handling, watchdog).
+--   3. Build and write "status" (includes the "status" function's result).
+--
+-- ## Function contract (reaper/functions/*.lua)
+--   Each file is a Lua chunk. The bridge loads it once and calls it as
+--   chunk(args) for every "call"; the chunk returns one value (usually a
+--   table) that the bridge encodes as JSON. A refusal is error("message", 0);
+--   the page shows the message to the user.
+--   Two names are special and are run by the loop itself, not by the page:
+--     tick.lua    called every tick with no arguments
+--     status.lua  called every tick; its return value becomes status.app
+--
+-- ## Other duties
+--   - Session id: random at start, so the page notices a REAPER restart and
+--     re-uploads the functions.
+--   - JSON encode/decode helpers, available to the functions.
+--   - A state table that survives function re-uploads (last take, active
+--     recording, watchdog flags).
+--   - On exit (reaper.atexit) clear "status" so the page shows the bridge
+--     as down immediately.

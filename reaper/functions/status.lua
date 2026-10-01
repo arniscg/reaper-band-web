@@ -1,0 +1,19 @@
+-- status  (not implemented yet; called by the bridge loop every tick)
+--
+-- Small table published as status.app in every poll. Keep it small: it is
+-- read five times a second.
+--
+-- returns: { project   = key that changes when the active project changes,
+--            marker    = bool,
+--            mode      = "live" | "practice",
+--            queued    = song guid | nil,
+--            rate      = master playrate,
+--            active    = { kind = "live"|"practice"|"play", songId, partId } | nil,
+--            practice  = { players = [guid], mutes = [guid] },
+--            lastTake  = { songId, partId, rate, players } | nil,
+--            watchdog  = { seq, message } | nil,
+--            event     = { seq, message } | nil,
+--            counters  = { songs, tracks, setlist, settings, project } }
+--                        (the page refetches data when a counter changes)
+--
+-- REAPER API: EnumProjects, GetProjectStateChangeCount, Master_GetPlayRate

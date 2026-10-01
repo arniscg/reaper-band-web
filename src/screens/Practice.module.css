@@ -1,0 +1,295 @@
+.pickers {
+  flex: 1;
+  min-height: 240px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.picker {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.picker > :global(.label) {
+  padding-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item {
+  flex-shrink: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  border: 2px solid var(--surface);
+  text-align: left;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.item:disabled {
+  opacity: 0.6;
+}
+
+.itemNum {
+  width: 22px;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.whole {
+  font-weight: 700;
+}
+
+.on {
+  background: var(--practice-tint);
+  border-color: var(--practice);
+}
+
+.divider {
+  padding: 10px 4px 4px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* Players, pre-roll, tempo */
+
+.controls {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.playersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.playerChip {
+  height: 52px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 2px solid var(--border);
+  color: var(--muted);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.chipOn {
+  background: var(--practice);
+  border-color: var(--practice);
+  color: var(--practice-ink);
+}
+
+.playerMute,
+.muteAll {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius-s);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.muteAll {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.muteOn {
+  background: #3a2a12;
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+.steppers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.stepperBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tempoHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.reset {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--practice);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* Transport line */
+
+.transport {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.transportRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.stateDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.stateRec {
+  background: var(--rec-strong);
+  border-color: var(--rec-strong);
+  color: #fff;
+}
+
+.statePlay {
+  border-color: var(--practice);
+  color: var(--practice);
+}
+
+.where {
+  flex: 1;
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.time {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.lastTake {
+  font-size: 17px;
+  color: var(--muted);
+}
+
+/* Action buttons */
+
+.buttons {
+  flex-shrink: 0;
+  height: 250px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.big {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border-radius: 22px;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.record {
+  background: var(--rec-strong);
+  border: 3px solid var(--rec);
+  color: #fff;
+}
+
+.play {
+  background: var(--practice-tint);
+  border: 3px solid var(--practice);
+}
+
+.play .fillIcon {
+  fill: var(--practice);
+}
+
+.stopActive {
+  background: var(--surface-2);
+  border: 3px solid var(--text);
+}
+
+.fillIcon {
+  fill: currentColor;
+}
+
+.strokeIcon {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

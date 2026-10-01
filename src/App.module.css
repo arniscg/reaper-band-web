@@ -1,0 +1,27 @@
+/* Full-screen column sized for the iPad; Live and Practice fit the screen,
+   Setup scrolls. */
+.app {
+  height: 100dvh;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom))
+    max(24px, env(safe-area-inset-left));
+  overflow: hidden;
+}
+
+.scrolling {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+.waiting {
+  margin: auto 0;
+  text-align: center;
+  font-size: var(--text-l);
+  color: var(--muted);
+  padding: 48px;
+}

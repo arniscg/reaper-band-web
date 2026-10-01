@@ -1,0 +1,258 @@
+.lockNote {
+  padding: 12px 16px;
+  border-radius: var(--radius-m);
+  background: var(--rec-tint);
+  border: 2px solid var(--rec);
+  font-weight: 600;
+}
+
+/* Mode */
+
+.modeButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.modeButton {
+  height: 72px;
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  border: 2px solid;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.live {
+  border-color: var(--live);
+}
+
+.practice {
+  border-color: var(--practice);
+}
+
+.modeActive:disabled {
+  opacity: 1;
+}
+
+.live.modeActive {
+  background: var(--live);
+  color: var(--live-ink);
+}
+
+.practice.modeActive {
+  background: var(--practice);
+  color: var(--practice-ink);
+}
+
+.modeTable {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.modeTable td {
+  padding: 4px 8px 4px 0;
+  width: 33%;
+}
+
+.modeTable .current {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* Setlist editor */
+
+.setlistGrid {
+  flex: 1;
+  min-height: 280px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.column {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.songRow {
+  flex-shrink: 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 12px;
+}
+
+.dimRow {
+  color: var(--faint);
+}
+
+.songName {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.small {
+  font-size: 15px;
+  color: var(--faint);
+  padding-right: 8px;
+}
+
+.setRow {
+  flex-shrink: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+}
+
+.dragging {
+  background: var(--border);
+  outline: 2px solid var(--muted);
+}
+
+.handle {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 4px 0 10px;
+  touch-action: none;
+  cursor: grab;
+}
+
+.handle svg {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.setNum {
+  width: 22px;
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.iconButton {
+  flex-shrink: 0;
+  width: 48px;
+  height: 44px;
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.setRow .iconButton {
+  background: none;
+  border: none;
+  color: var(--muted);
+}
+
+.smallButton {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-s);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Settings */
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 32px;
+  margin-top: 12px;
+}
+
+.setting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settingLabel {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+/* Diagnostics */
+
+.diag {
+  flex-shrink: 0;
+}
+
+.diagHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.diagButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  row-gap: 8px;
+  column-gap: 16px;
+  margin: 12px 0 0;
+  font-size: 17px;
+}
+
+.grid dt {
+  color: var(--muted);
+}
+
+.grid dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 8px;
+  border-radius: 50%;
+}
+
+.bad {
+  color: var(--rec);
+}
+
+.inline {
+  margin-left: 12px;
+  min-height: 36px;
+}

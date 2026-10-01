@@ -1,0 +1,29 @@
+-- startLive  (not implemented yet)
+--
+-- Live mode Start: pre-flight checks, then record the song.
+--
+-- Pre-flight (refuse = error with a clear message, nothing changed; fix = silently):
+--   refuse  project marker missing / not the active tab
+--   refuse  already recording
+--   refuse  song not found in the Songs lane
+--   refuse  number of [Live] tracks differs from settings.liveCount
+--   fix     all [Live] tracks armed, unmuted, record input on
+--   fix     master playrate 1.0
+--   fix     [Show] unmuted, [Practice] muted
+--   fix     record mode normal, repeat off
+--   fix     "stop at end of loop if repeat is disabled" on (or refuse)
+--   fix     all tracks in automation Read mode
+--   refuse  free disk on the record path below settings.minDiskGB
+-- Then:
+--   time selection and loop points = song start .. song end + tail;
+--   record path Recordings/Live; cursor to song start; start recording.
+-- The bridge remembers the active recording for tick (song end, watchdog).
+--
+-- args:    { id = song guid }
+-- returns: { recording = true, armed = [ track index, ... ] }
+--          (the page confirms via the poll: recording + these tracks armed)
+--
+-- REAPER API: GetSet_LoopTimeRange2, SetMediaTrackInfo_Value (I_RECARM,
+--             I_RECMODE, B_MUTE), CSurf_OnPlayRateChange, GetSetRepeatEx,
+--             SetTrackAutomationMode, GetFreeDiskSpaceForRecordPath,
+--             SetEditCurPos2, CSurf_OnRecord

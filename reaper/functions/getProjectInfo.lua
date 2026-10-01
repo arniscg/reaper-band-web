@@ -1,0 +1,16 @@
+-- getProjectInfo  (not implemented yet)
+--
+-- Facts about the active project for the header and the Setup diagnostics.
+--
+-- args:    { }
+-- returns: { name          = project file name,
+--            marker        = true if the band project marker is present,
+--            mode          = "live" | "practice"  (project ext state),
+--            reaperVersion = GetAppVersion(),
+--            recordPath    = current record path,
+--            freeDiskMB    = free space on the record path,
+--            lanes         = { songs = bool, parts = bool } }  -- ruler lanes found by name
+--
+-- REAPER API: EnumProjects, GetProjExtState, GetAppVersion,
+--             GetSetProjectInfo_String("RECORD_PATH" / "RULER_LANE_NAME:n"),
+--             GetFreeDiskSpaceForRecordPath

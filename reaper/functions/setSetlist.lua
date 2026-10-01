@@ -1,0 +1,8 @@
+-- setSetlist  (not implemented yet)
+--
+-- Replace the setlist and save the project.
+--
+-- args:    { ids = [ guid, ... ] }
+-- returns: { ids = [ guid, ... ] }
+--
+-- REAPER API: SetProjExtState, Main_SaveProject

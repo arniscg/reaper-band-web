@@ -1,0 +1,87 @@
+desc:Band Remote Talk Voice Switch
+//tags: utility routing
+//author: Band Remote
+//
+// Switches the vocal between the song path and the talk path by following
+// REAPER's transport, so it works even when the page or the bridge is down.
+//
+//   playing / recording   -> mic on channels 1/2  (song path: the existing
+//                            automated sends to the FX buses)
+//   stopped / paused      -> mic on channels 3/4  (talk path: one send to the
+//                            "Vocal talk" bus with its own compression/EQ)
+//
+// The switch is an equal-power crossfade, so there are no clicks and no dip
+// in level. It happens before the FX buses, so reverb/delay tails ring out
+// naturally when a song ends. Recordings are unaffected: REAPER records the
+// input before any FX.
+//
+// Setup (once):
+//   1. Copy this file into REAPER's Effects folder, add it to the vocal track.
+//   2. Vocal track routing: 4 track channels.
+//   3. Existing sends keep their default source, channels 1/2.
+//   4. Add a send from the vocal track, source channels 3/4, to the
+//      "Vocal talk" bus (leave that bus untagged).
+// Channels 5 and up pass through untouched.
+
+slider1:0<0,2,1{Auto (follows transport),Always song,Always talk}>Mode
+slider2:150<10,1000,10>Crossfade (ms)
+slider3:0<0,1,1{Stereo (ch 1+2),Mono (ch 1 to both sides)}>Input
+
+in_pin:Mic L
+in_pin:Mic R
+out_pin:Song L
+out_pin:Song R
+out_pin:Talk L
+out_pin:Talk R
+
+@init
+ext_noinit = 1;        // keep the crossfade state when playback starts
+function target_now()
+(
+  slider1 == 1 ? 1 :
+  slider1 == 2 ? 0 :
+  (play_state == 1 || play_state == 5) ? 1 : 0;
+);
+pos = target_now();    // 1 = song, 0 = talk; start settled, without a fade
+last_pos = -1;
+gain_song = 0;
+gain_talk = 0;
+
+@slider
+step = 1 / max(1, slider2 * 0.001 * srate);
+
+@block
+target = target_now();
+
+@sample
+pos != target ? (
+  pos < target ? (pos = min(target, pos + step)) : (pos = max(target, pos - step));
+);
+pos != last_pos ? (
+  gain_song = sin(pos * $pi * 0.5);
+  gain_talk = cos(pos * $pi * 0.5);
+  last_pos = pos;
+);
+
+in_l = spl0;
+in_r = slider3 == 1 ? spl0 : spl1;
+
+spl0 = in_l * gain_song;
+spl1 = in_r * gain_song;
+spl2 = in_l * gain_talk;
+spl3 = in_r * gain_talk;
+
+@gfx 220 60
+gfx_clear = 0x111111;
+gfx_setfont(1, "Arial", 28, 'b');
+pos >= 0.5 ? (
+  gfx_r = 0.95; gfx_g = 0.66; gfx_b = 0.23;
+  label = "SONG VOICE";
+) : (
+  gfx_r = 0.35; gfx_g = 0.66; gfx_b = 0.90;
+  label = "TALK VOICE";
+);
+gfx_measurestr(label, w, h);
+gfx_x = (gfx_w - w) / 2;
+gfx_y = (gfx_h - h) / 2;
+gfx_drawstr(label);

@@ -1,0 +1,9 @@
+-- markProject  (not implemented yet)
+--
+-- Mark the active project as the band project (Setup screen button) and
+-- save it. The page refuses to operate on a project without the marker.
+--
+-- args:    { }
+-- returns: { marker = true }
+--
+-- REAPER API: SetProjExtState, Main_SaveProject

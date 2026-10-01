@@ -1,0 +1,111 @@
+/* Design tokens and a few shared building blocks. Component-specific styles
+   live next to each component in *.module.css. */
+
+:root {
+  --bg: #0e0f11;
+  --surface: #17191c;
+  --surface-2: #1f2226;
+  --border: #2c3036;
+  --text: #ecebe7;
+  --muted: #a3a7ad;
+  --faint: #80858c;
+
+  --live: #f2a93b;
+  --live-ink: #1a1204;
+  --live-tint: #2a2215;
+  --practice: #5aa9e6;
+  --practice-ink: #06131d;
+  --practice-tint: #14222d;
+  --setup: #3a3f45;
+
+  --rec: #e5484d;
+  --rec-strong: #b3272d;
+  --rec-tint: #2a1517;
+  --ok: #46a758;
+  --warn: #f2a93b;
+
+  /* The mode color: set by [data-mode] on the app root. */
+  --accent: var(--live);
+  --accent-ink: var(--live-ink);
+  --accent-tint: var(--live-tint);
+
+  --radius-s: 10px;
+  --radius-m: 14px;
+  --radius-l: 20px;
+  --radius-xl: 24px;
+  --gap: 16px;
+  --pad: 24px;
+  --touch: 56px;
+
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-s: 16px;
+  --text-m: 19px;
+  --text-l: 24px;
+  --text-xl: 40px;
+  --text-xxl: 64px;
+
+  color-scheme: dark;
+}
+
+[data-mode='practice'] {
+  --accent: var(--practice);
+  --accent-ink: var(--practice-ink);
+  --accent-tint: var(--practice-tint);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--text-m);
+  line-height: 1.3;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-l);
+  padding: 20px var(--pad);
+}
+
+.label {
+  font-size: var(--text-s);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}

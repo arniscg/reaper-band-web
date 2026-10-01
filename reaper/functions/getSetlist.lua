@@ -1,0 +1,8 @@
+-- getSetlist  (not implemented yet)
+--
+-- The setlist: ordered song region GUIDs stored in project ext state.
+--
+-- args:    { }
+-- returns: { ids = [ guid, ... ] }
+--
+-- REAPER API: GetProjExtState

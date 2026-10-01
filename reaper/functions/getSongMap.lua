@@ -1,0 +1,15 @@
+-- getSongMap  (not implemented yet)
+--
+-- Songs and their parts, found by ruler lane name: regions in the lane named
+-- "Songs" are songs; regions in the lane named "Parts" that start inside a
+-- song are that song's parts. Songs sorted by start; ids are region GUIDs.
+--
+-- args:    { }
+-- returns: { songs = [ { id, num, name, start, ["end"], color,
+--                        parts = [ { id, name, start, ["end"] } ] } ] }
+--
+-- REAPER API: GetNumRegionsOrMarkers, GetRegionOrMarker,
+--             GetRegionOrMarkerInfo_Value (D_STARTPOS, D_ENDPOS, I_LANENUMBER,
+--             I_NUMBER, I_CUSTOMCOLOR, B_ISREGION),
+--             GetSetRegionOrMarkerInfo_String (P_NAME, GUID),
+--             GetSetProjectInfo_String ("RULER_LANE_NAME:n")

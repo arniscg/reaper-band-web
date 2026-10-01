@@ -1,0 +1,12 @@
+-- playLast  (not implemented yet)
+--
+-- Replay the last take: turn off input monitoring on the recorded tracks,
+-- play from the remembered start through the range, restore monitoring when
+-- it stops (tick). Player mutes stay as they are. The newest recording is
+-- the active take, so it is what plays.
+--
+-- args:    { }
+-- returns: { playing = true, start, range = { start, ["end"] } }
+--
+-- REAPER API: SetMediaTrackInfo_Value (I_RECMON), GetSet_LoopTimeRange2,
+--             SetEditCurPos2, OnPlayButton

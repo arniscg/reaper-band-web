@@ -1,0 +1,11 @@
+-- loadSong  (not implemented yet)
+--
+-- Queue the song and move the edit cursor to its start; REAPER applies the
+-- automation there (the song's sound-check state) while stopped. Refused
+-- while recording. The page shows "loaded" when the transport is stopped
+-- with the cursor at the queued song's start.
+--
+-- args:    { id = song guid }
+-- returns: { queued = guid, pos = seconds }
+--
+-- REAPER API: GetPlayState, SetEditCurPos2

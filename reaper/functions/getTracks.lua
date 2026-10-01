@@ -1,0 +1,14 @@
+-- getTracks  (not implemented yet)
+--
+-- Tracks carrying a bracketed tag: [Live], [Show] or [Practice]. Whole tags
+-- only, case-insensitive. [Live] is only on input tracks (one track = one
+-- player). [Show]/[Practice] may be on any track, folder or not; only the
+-- tagged track itself is muted/unmuted, never its children.
+--
+-- args:    { }
+-- returns: { tracks = [ { guid, index (1-based), name (full), label (name
+--                         without tags), tags = ["live"|"show"|"practice"],
+--                         folder = bool } ] }
+--
+-- REAPER API: CountTracks, GetTrack, GetTrackGUID, GetSetMediaTrackInfo_String (P_NAME),
+--             GetMediaTrackInfo_Value (I_FOLDERDEPTH)

@@ -1,0 +1,11 @@
+-- stop  (not implemented yet)
+--
+-- Hold-to-stop / Practice Stop. While recording uses the
+-- "Transport: Stop (save all recorded media)" action; otherwise a plain
+-- stop. The after-stop work (save project, cursor, queue next) is done by
+-- tick, the same as when REAPER stops by itself.
+--
+-- args:    { }
+-- returns: { stopped = true }
+--
+-- REAPER API: GetPlayState, Main_OnCommand (stop and save all), OnStopButton

@@ -1,0 +1,16 @@
+-- recordPractice  (not implemented yet)
+--
+-- Practice Record: same pre-flight idea as startLive minus the mode-specific
+-- checks, then:
+--   1. chosen players armed, others disarmed (see setPracticeOptions)
+--   2. time selection = the part, or the whole song plus tail
+--   3. start = part start minus pre-roll bars (tempo map). No pre-roll and
+--      no count-in for a whole-song take or a part at the song start.
+--   4. record; auto-punch records only inside the selection
+--   5. remember the scope for Play last and Retry
+--
+-- args:    { songId, partId (nil = whole song), prerollBars }
+-- returns: { recording = true, start, range = { start, ["end"] } }
+--
+-- REAPER API: TimeMap2_timeToBeats, TimeMap2_beatsToTime, GetSet_LoopTimeRange2,
+--             GetSetProjectInfo_String ("RECORD_PATH"), SetEditCurPos2, CSurf_OnRecord

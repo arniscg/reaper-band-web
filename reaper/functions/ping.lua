@@ -1,0 +1,6 @@
+-- ping  (not implemented yet)
+--
+-- Round-trip test for the bridge; used by the Setup screen to measure latency.
+--
+-- args:    { }
+-- returns: { t = reaper.time_precise() }

@@ -1,0 +1,9 @@
+-- setSettings  (not implemented yet)
+--
+-- Update some or all settings (same fields as getSettings) and save the
+-- project.
+--
+-- args:    { tail?, prerollDefault?, liveCount?, minDiskGB? }
+-- returns: the full settings table, as getSettings
+--
+-- REAPER API: SetProjExtState, Main_SaveProject

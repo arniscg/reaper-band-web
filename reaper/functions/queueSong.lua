@@ -1,0 +1,9 @@
+-- queueSong  (not implemented yet)
+--
+-- Make a song the queued song (Live setlist tap). Refused while recording.
+-- Only remembers it; the cursor does not move (that is loadSong).
+--
+-- args:    { id = song guid }
+-- returns: { queued = guid }
+--
+-- REAPER API: GetPlayState, SetProjExtState
