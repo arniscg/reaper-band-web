@@ -252,6 +252,10 @@
   color: var(--rec);
 }
 
+.warn {
+  color: var(--warn);
+}
+
 .inline {
   margin-left: 12px;
   min-height: 36px;

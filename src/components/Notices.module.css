@@ -21,10 +21,30 @@
   border: 3px solid var(--rec);
 }
 
+.errorCard {
+  max-height: calc(100dvh - 64px);
+}
+
 .errorText {
   font-size: var(--text-xl);
   font-weight: 700;
   line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  margin: 0;
+  max-height: 40vh;
+  overflow: auto;
+  padding: 12px;
+  border-radius: var(--radius-s);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--muted);
+  font: 14px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .okButton {
@@ -55,8 +75,13 @@
   font-weight: 600;
 }
 
-.banner span {
+.bannerText {
   flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 30vh;
+  overflow: auto;
 }
 
 .bad {
@@ -92,4 +117,20 @@
 .blockerTitle {
   font-size: var(--text-xl);
   font-weight: 700;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: max(96px, calc(env(safe-area-inset-top) + 72px)); /* below the header, clear of the big button */
+  transform: translateX(-50%);
+  z-index: 5;
+  max-width: calc(100% - 48px);
+  padding: 14px 22px;
+  border-radius: var(--radius-m);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  font-size: var(--text-m);
+  font-weight: 600;
 }

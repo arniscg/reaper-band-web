@@ -2,7 +2,7 @@ import { useStore } from './state/store';
 import { Live } from './screens/Live';
 import { Practice } from './screens/Practice';
 import { Setup } from './screens/Setup';
-import { Banners, ErrorOverlay, NotBandProject } from './components/Notices';
+import { Banners, ErrorOverlay, EventToast, NotBandProject } from './components/Notices';
 import { Header } from './components/Header';
 import styles from './App.module.css';
 
@@ -15,6 +15,7 @@ export function App() {
     <div class={`${styles.app} ${kind === 'setup' ? styles.scrolling : ''}`} data-mode={kind}>
       <Banners />
       {kind === 'setup' ? <Setup /> : <Main mode={mode} />}
+      <EventToast />
       <ErrorOverlay />
     </div>
   );

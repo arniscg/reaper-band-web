@@ -8,6 +8,13 @@
 // Run: npm run mock   (then npm run dev in another terminal)
 // Fault switches: http://localhost:8080/mock/set?bridge=0|1&stopAtEnd=0|1&diskMB=N&marker=0|1&hang=0|1
 //   hang=1 leaves web API requests unanswered, like REAPER blocked by a modal dialog.
+//   failFn=<name> makes that function fail like a Lua bug (with a traceback); failFn= clears it.
+//   loopErr=1 reports an error from the bridge loop (tick/status); loopErr=0 clears it.
+//   slowOnce=1 answers the next web API request after 3.5 s (past the page's timeout).
+//   delayMs=N delays every web API answer by N ms.
+//   stopAtEnd=0 REAPER doesn't stop at the end: the bridge stops 0.5 s later.
+//   bridgeStop=0 the bridge's own stop fails too: the watchdog stops at +2 s.
+//   sws=0 SWS not installed: Setup shows the stop-marker note.
 // Inspect state:  http://localhost:8080/mock/state
 
 import http from 'node:http';
@@ -16,6 +23,7 @@ import { randomUUID } from 'node:crypto';
 const PORT = Number(process.env.PORT) || 8080;
 const SECTION = 'BandRemote';
 const RESP_CHUNK = 12000;
+const MAX_VALUE = 1023; // REAPER's web server cuts SET values to ~1024 chars
 const TICK_MS = 33;
 
 // ---------------------------------------------------------------------------
@@ -77,7 +85,7 @@ const proj = {
 };
 
 const transport = { state: 0, pos: songs[0].start - 4, rate: 1, repeat: false, sel: null };
-const mock = { bridge: true, stopAtEnd: true, diskMB: 120_000, hang: false };
+const mock = { bridge: true, stopAtEnd: true, diskMB: 120_000, hang: false, failFn: '', loopErr: false, slowOnce: false, delayMs: 0, bridgeStop: true, sws: true };
 
 // ---------------------------------------------------------------------------
 // Transport simulation
@@ -119,7 +127,6 @@ const bridge = {
   lib: null,
   counters: { songs: 1, tracks: 1, setlist: 1, settings: 1, project: 1 },
   active: null,
-  prevState: 0,
   watchdog: null,
   event: null,
   seq: 0,
@@ -179,11 +186,16 @@ const fns = {
   ping: () => ({ t: Date.now() / 1000 }),
 
   getProjectInfo: () => ({
-    name: proj.name, marker: proj.marker, mode: proj.mode, reaperVersion: '7.50/mock',
-    recordPath: proj.recordPath, freeDiskMB: mock.diskMB, lanes: { songs: true, parts: true },
+    name: proj.name, saved: true, marker: proj.marker, mode: proj.mode, reaperVersion: '7.50/mock',
+    recordPath: proj.recordPath, freeDiskMB: mock.diskMB, lanes: { songs: true, parts: true }, missingActions: [], stopMarker: mock.sws ? { ok: true } : { ok: false, problem: 'SWS extension not installed' },
   }),
 
   getSongMap: () => ({ songs }),
+
+  getSnapshot: () => ({
+    project: nested('getProjectInfo'), songs: nested('getSongMap').songs, tracks: nested('getTracks').tracks,
+    setlist: nested('getSetlist').ids, settings: nested('getSettings'),
+  }),
 
   getTracks: () => ({
     tracks: tracks.map((t, i) => ({
@@ -235,6 +247,7 @@ const fns = {
   },
 
   stop: () => {
+    if (bridge.active) bridge.active.stoppedBy = 'stop button';
     transport.state = 0;
     return { stopped: true };
   },
@@ -288,35 +301,55 @@ const fns = {
   },
 };
 
+// Runs a stand-in like B.call does; failFn makes it fail like a Lua bug.
+function nested(name, args = {}) {
+  if (mock.failFn === name) {
+    throw new Error(`${name}.lua:12: attempt to index a nil value (local 'song')\nstack traceback:\n\t[C]: in ?\n\t${name}.lua:12: in function <${name}.lua:0>\n\t[C]: in function 'xpcall'`);
+  }
+  const fn = fns[name] ?? (() => { throw new Error(`mock has no stand-in for ${name}`); });
+  return fn(args);
+}
+
 // Stand-in for tick.lua
 function tick() {
   const a = bridge.active;
-  if (a && transport.state === 0 && bridge.prevState !== 0) {
+  if (a && transport.state !== 0) a.started = true;
+  if (a && a.started && transport.state === 0) {
     bridge.active = null;
+    const how = a.stoppedBy === 'bridge' ? 'the bridge stopped it after the end'
+      : a.stoppedBy === 'watchdog' ? 'stopped by the watchdog'
+      : a.stoppedBy === 'stop button' ? 'stopped with the Stop button'
+      : transport.pos >= a.stopAt - 0.25 ? 'REAPER stopped at the end' : 'stopped in REAPER before the end';
     if (a.kind === 'live') {
       const song = songById(a.songId);
       transport.pos = song.end;
       const idx = proj.setlist.indexOf(song.id);
       proj.queued = idx >= 0 && idx + 1 < proj.setlist.length ? proj.setlist[idx + 1] : null;
-      bridge.event = notice(`${song.name} saved`);
+      bridge.event = notice(`${song.name} saved · ${how}`);
     } else if (a.kind === 'practice') {
-      bridge.event = notice('Take saved');
+      bridge.event = notice(`Take saved · ${how}`);
     } else if (a.kind === 'play') {
       for (const t of liveTracks()) t.recmon = 1;
+      bridge.event = notice(`Playback ended · ${how}`);
     }
   }
-  if (a && isRecording() && transport.pos > a.stopAt + 2) {
-    transport.state = 0;
-    bridge.watchdog = notice('Recording ran past the song end; the bridge stopped it and saved the media');
+  if (a && transport.state !== 0) {
+    if (transport.pos > a.stopAt + 2 && !a.watchdog) {
+      a.watchdog = true;
+      a.stoppedBy = 'watchdog';
+      transport.state = 0;
+      bridge.watchdog = notice('Recording ran past the end of the song. The bridge stopped it and saved the media.');
+    } else if (transport.pos > a.stopAt + 0.5 && !a.stoppedBy) {
+      a.stoppedBy = 'bridge';
+      if (mock.bridgeStop) transport.state = 0;
+    }
   }
-  bridge.prevState = transport.state;
 }
 
 // Stand-in for status.lua
 function appStatus() {
   const a = bridge.active;
   return {
-    project: `${proj.name}#${bridge.counters.project}`,
     marker: proj.marker,
     mode: proj.mode,
     queued: proj.queued,
@@ -342,11 +375,15 @@ function handleRequest() {
   const req = getExt(SECTION, 'req');
   if (!req) return;
   setExt(SECTION, 'req', '');
-  const m = /^([\w-]+):(\d+)$/.exec(req);
+  const m = /^([\w-]+):(\d+):?(\d*)$/.exec(req);
   if (!m) return;
-  const [, id, n] = m;
+  const [, id, n, len] = m;
   let b64 = '';
   for (let i = 0; i < Number(n); i++) { b64 += getExt(SECTION, `c${i}`); delExt(SECTION, `c${i}`); }
+  if (len && b64.length !== Number(len)) {
+    respond(id, { ok: false, error: `The request was cut off on the way to REAPER: ${b64.length} of ${len} characters arrived.` });
+    return;
+  }
   const text = Buffer.from(b64, 'base64url').toString('utf8');
   const nl = text.indexOf('\n');
   const [kind, name] = text.slice(0, nl).split(' ');
@@ -357,8 +394,7 @@ function handleRequest() {
     else if (kind === 'seal') { bridge.lib = name; result = { lib: name, functions: bridge.defs.size }; }
     else if (kind === 'call') {
       if (!bridge.defs.has(name)) throw new Error(`unknown function: ${name}`);
-      const fn = fns[name] ?? (() => { throw new Error(`mock has no stand-in for ${name}`); });
-      result = fn(payload ? JSON.parse(payload) : {});
+      result = nested(name, payload ? JSON.parse(payload) : {});
     } else throw new Error(`unknown request kind: ${kind}`);
     respond(id, { ok: true, result });
   } catch (e) {
@@ -372,7 +408,8 @@ function bridgeLoop() {
   handleRequest();
   tick();
   const status = JSON.stringify({
-    v: 1, session: bridge.session, lib: bridge.lib, hb: Math.floor(Date.now() / 250) % 100000, err: null,
+    v: 1, session: bridge.session, lib: bridge.lib, hb: Math.floor(Date.now() / 250) % 100000,
+    err: mock.loopErr ? "tick: tick.lua:40: attempt to compare nil with number\nstack traceback:\n\ttick.lua:40: in main chunk" : null,
     app: bridge.lib ? appStatus() : null,
   });
   if (status !== bridge.lastStatus) { setExt(SECTION, 'status', status); bridge.lastStatus = status; }
@@ -416,7 +453,8 @@ function command(cmd) {
       if (parts[1] === 'REPEAT') return [`GET/REPEAT\t${transport.repeat ? 1 : 0}`];
       return [];
     case 'SET':
-      if (parts[1] === 'EXTSTATE' || parts[1] === 'EXTSTATEPERSIST') setExt(parts[2], parts[3], parts.slice(4).join('/'));
+      // Like REAPER's web server: only ~1024 characters of a value are kept.
+      if (parts[1] === 'EXTSTATE' || parts[1] === 'EXTSTATEPERSIST') setExt(parts[2], parts[3], parts.slice(4).join('/').slice(0, MAX_VALUE));
       else if (parts[1] === 'POS') transport.pos = Number(parts[2]) || 0;
       else if (parts[1] === 'REPEAT') transport.repeat = parts[2] === '-1' ? !transport.repeat : parts[2] === '1';
       return [];
@@ -432,11 +470,15 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname.startsWith('/_/')) {
     if (mock.hang) return; // never answer
-    advance();
-    const raw = req.url.slice(3).split('?')[0];
-    const lines = raw.split(';').filter(Boolean).flatMap(command);
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' });
-    res.end(lines.length ? lines.join('\n') + '\n' : '');
+    let delay = mock.delayMs;
+    if (mock.slowOnce) { mock.slowOnce = false; delay = 3500; }
+    setTimeout(() => {
+      advance();
+      const raw = req.url.slice(3).split('?')[0];
+      const lines = raw.split(';').filter(Boolean).flatMap(command);
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-cache' });
+      res.end(lines.length ? lines.join('\n') + '\n' : '');
+    }, delay);
     return;
   }
   if (url.pathname === '/mock/set') {
@@ -445,6 +487,12 @@ const server = http.createServer((req, res) => {
       if (k === 'stopAtEnd') mock.stopAtEnd = v === '1';
       if (k === 'diskMB') mock.diskMB = Number(v);
       if (k === 'hang') mock.hang = v === '1';
+      if (k === 'failFn') mock.failFn = v;
+      if (k === 'loopErr') mock.loopErr = v === '1';
+      if (k === 'slowOnce') mock.slowOnce = v === '1';
+      if (k === 'bridgeStop') mock.bridgeStop = v === '1';
+      if (k === 'sws') { mock.sws = v === '1'; bump('project'); }
+      if (k === 'delayMs') mock.delayMs = Number(v) || 0;
       if (k === 'marker') { proj.marker = v === '1'; bump('project'); }
     }
   }

@@ -60,12 +60,20 @@ export interface Settings {
 
 export interface ProjectInfo {
   name: string;
+  saved: boolean;
   marker: boolean;
   mode: Mode;
   reaperVersion: string;
   recordPath: string;
   freeDiskMB: number;
   lanes: { songs: boolean; parts: boolean };
+  /** REAPER actions the bridge could not find by name. */
+  missingActions: string[];
+  /** SWS stop marker: REAPER ends takes by itself, even without the bridge. */
+  stopMarker?: { ok: boolean; problem?: string };
+  /** Ruler lanes as REAPER reports them (diagnostics). */
+  laneInfo?: { lane: number; name?: string; regions: number }[];
+  laneCount?: number;
 }
 
 export interface Notice {
@@ -75,7 +83,7 @@ export interface Notice {
 
 export interface LastTake {
   songId: string;
-  partId: string | null;
+  partId?: string | null;
   prerollBars: number;
   rate: number;
   players: string[];
@@ -83,25 +91,24 @@ export interface LastTake {
 
 /** Returned by status.lua, published every tick as status.app. */
 export interface AppStatus {
-  project: string;
   marker: boolean;
   mode: Mode;
-  queued: string | null;
+  queued?: string | null;
   rate: number;
-  active: { kind: 'live' | 'practice' | 'play'; songId: string; partId: string | null } | null;
+  active?: { kind: 'live' | 'practice' | 'play'; songId: string; partId?: string | null } | null;
   practice: { players: string[]; mutes: string[] };
-  lastTake: LastTake | null;
-  watchdog: Notice | null;
-  event: Notice | null;
-  counters: Record<string, number>;
+  lastTake?: LastTake | null;
+  watchdog?: Notice | null;
+  event?: Notice | null;
+  counters: Record<string, number | string>;
 }
 
-/** The bridge's own status key. */
+/** The bridge's own status key. Lua drops nil fields, so absent = null. */
 export interface BridgeStatus {
   v: number;
   session: string;
-  lib: string | null;
+  lib?: string | null;
   hb: number;
-  err: string | null;
-  app: AppStatus | null;
+  err?: string | null;
+  app?: AppStatus | null;
 }

@@ -5,6 +5,7 @@ import { useStore, showScreen, type State } from '../state/store';
 import { isRecordingState, liveTracks, songById } from '../state/derive';
 import { loadSong, markProject, ping, reload, setMode, setSetlist, setSettings } from '../state/actions';
 import { scripts, scriptsHash } from '../reaper/scripts';
+import { requestStats } from '../reaper/web';
 import type { Mode, Settings, Song, Tag } from '../reaper/types';
 import styles from './Setup.module.css';
 
@@ -215,6 +216,15 @@ function Diagnostics({ st }: { st: State }) {
           {bridgeText}
           {latency !== null && ` · round trip ${latency} ms`}
         </dd>
+        <dt>Web requests</dt>
+        <dd>
+          {requestStats.count} answered · average {requestStats.count ? Math.round(requestStats.totalMs / requestStats.count) : 0} ms · slowest{' '}
+          {Math.round(requestStats.maxMs)} ms ·{' '}
+          <span class={requestStats.timeouts ? styles.bad : ''}>{requestStats.timeouts} timed out</span>
+          {requestStats.failures > 0 && <span class={styles.bad}> · {requestStats.failures} failed</span>}
+        </dd>
+        <dt>Last event</dt>
+        <dd>{b?.app?.event?.message ?? '—'}</dd>
         <dt>Functions</dt>
         <dd>
           {scripts.length} Lua files · {b?.lib === scriptsHash ? 'uploaded' : 'not uploaded'} ({scriptsHash})
@@ -231,7 +241,8 @@ function Diagnostics({ st }: { st: State }) {
         <dd>
           {p ? (
             <>
-              {p.name} · {p.marker ? 'band project marker found' : <span class={styles.bad}>no band project marker</span>}
+              {p.name} · {!p.saved && <span class={styles.bad}>never saved · </span>}
+              {p.marker ? 'band project marker found' : <span class={styles.bad}>no band project marker</span>}
               {!p.marker && (
                 <button class={`${styles.smallButton} ${styles.inline}`} disabled={st.bridge !== 'ready'} onClick={markProject}>
                   Mark as band project
@@ -242,6 +253,28 @@ function Diagnostics({ st }: { st: State }) {
             '—'
           )}
         </dd>
+        {p && p.missingActions.length > 0 && (
+          <>
+            <dt>REAPER actions</dt>
+            <dd class={styles.bad}>
+              Not found: {p.missingActions.join('; ')}
+            </dd>
+          </>
+        )}
+        {p?.stopMarker && (
+          <>
+            <dt>Stop at end</dt>
+            <dd>
+              {p.stopMarker.ok ? (
+                'REAPER stops takes itself (SWS stop marker), even if the bridge stops'
+              ) : (
+                <span class={styles.warn}>
+                  {p.stopMarker.problem}. Takes are stopped by the bridge instead, so if the bridge itself stops mid-song, nothing stops the take.
+                </span>
+              )}
+            </dd>
+          </>
+        )}
         <dt>Track tags</dt>
         <dd>
           <div>{tagLine('live', '[Live]')}</div>
@@ -257,6 +290,12 @@ function Diagnostics({ st }: { st: State }) {
             <>
               <span class={p.lanes.songs ? '' : styles.bad}>Songs {p.lanes.songs ? `(${st.songs.length})` : 'not found'}</span> ·{' '}
               <span class={p.lanes.parts ? '' : styles.bad}>Parts {p.lanes.parts ? `(${partCount})` : 'not found'}</span>
+              {p.laneInfo && (
+                <div class={styles.small}>
+                  REAPER has {p.laneCount ?? '?'} lanes:{' '}
+                  {p.laneInfo.map((l) => `#${l.lane} ${l.name === undefined ? '(no name)' : `"${l.name}"`} ${l.regions} regions`).join(' · ') || 'none'}
+                </div>
+              )}
             </>
           ) : (
             '—'
@@ -266,7 +305,7 @@ function Diagnostics({ st }: { st: State }) {
         <dd>{p?.recordPath ?? '—'}</dd>
         <dt>Free disk</dt>
         <dd class={p && st.settings && p.freeDiskMB < st.settings.minDiskGB * 1024 ? styles.bad : ''}>
-          {p ? `${(p.freeDiskMB / 1024).toFixed(1)} GB` : '—'}
+          {!p ? '—' : p.freeDiskMB < 0 ? 'unknown (the record folder may not exist yet)' : `${(p.freeDiskMB / 1024).toFixed(1)} GB`}
         </dd>
       </dl>
     </section>

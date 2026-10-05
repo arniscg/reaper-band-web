@@ -7,10 +7,12 @@ import { scripts, scriptsHash } from './scripts';
 
 export const SECTION = 'BandRemote';
 
-/** Max request chars per SET command; REAPER's URL length limit is still to be measured. */
-const CHUNK = 3000;
-const RESPONSE_POLL_MS = 40;
-const TIMEOUT_MS = 5000;
+/** Request chars per SET command. REAPER's web server keeps only ~1024
+ *  characters of a value (measured), so stay well below that. */
+const CHUNK = 900;
+const RESPONSE_POLL_MS = 100;
+/** Saving a big project or a first action lookup can take a few seconds. */
+const TIMEOUT_MS = 15000;
 
 export class BridgeError extends Error {}
 
@@ -41,7 +43,7 @@ async function send(kind: 'def' | 'seal' | 'call', name: string, payload: string
   for (let i = 0; i < chunks.length; i++) {
     await request([`SET/EXTSTATE/${SECTION}/c${i}/${chunks[i]}`]);
   }
-  await request([`SET/EXTSTATE/${SECTION}/req/${id}:${chunks.length}`]);
+  await request([`SET/EXTSTATE/${SECTION}/req/${id}:${chunks.length}:${data.length}`]);
 
   const deadline = Date.now() + TIMEOUT_MS;
   while (Date.now() < deadline) {
