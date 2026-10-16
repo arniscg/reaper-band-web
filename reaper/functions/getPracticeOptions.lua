@@ -1,10 +1,11 @@
 -- getPracticeOptions
 --
 -- Practice choices stored in the project, cleaned against the current
--- [Live] tracks. Defaults: every player recorded, nobody muted, rate 1.0.
+-- [Live] tracks. Defaults: every player recorded, rate 1.0. (Arming and
+-- muting are not stored: they are REAPER's own track state, see setPlayerState.)
 --
 -- args:    { }
--- returns: { players = [ track guid ], mutes = [ track guid ], rate }
+-- returns: { players = [ track guid ] (recorded by Record), rate }
 --
 -- REAPER API: GetProjExtState
 
@@ -14,7 +15,7 @@ local live = {}
 for _, t in ipairs(U.withTag(B.call("getTracks").tracks, "live")) do live[#live + 1] = t.guid end
 
 local stored = U.getJSON("practice", nil)
-if not stored then return { players = live, mutes = {}, rate = 1 } end
+if not stored then return { players = live, rate = 1 } end
 
 local function existing(list)
   local out = {}
@@ -27,6 +28,5 @@ end
 local rate = type(stored.rate) == "number" and stored.rate or 1
 return {
   players = existing(stored.players),
-  mutes = existing(stored.mutes),
   rate = math.min(1.2, math.max(0.5, rate)),
 }

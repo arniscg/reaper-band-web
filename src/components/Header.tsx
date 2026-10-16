@@ -46,6 +46,8 @@ function connectionChip(connection: string, bridge: string) {
   if (connection === 'offline') return { label: 'No REAPER', color: 'var(--rec)' };
   if (connection === 'connecting') return { label: 'Connecting', color: 'var(--faint)' };
   if (bridge === 'down') return { label: 'Bridge down', color: 'var(--warn)' };
+  if (bridge === 'outdated') return { label: 'Update bridge', color: 'var(--rec)' };
+  if (bridge === 'pageOutdated') return { label: 'Reload page', color: 'var(--rec)' };
   if (bridge === 'uploading') return { label: 'Loading', color: 'var(--warn)' };
   if (bridge === 'ready') return { label: 'REAPER', color: 'var(--ok)' };
   return { label: 'REAPER', color: 'var(--faint)' };

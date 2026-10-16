@@ -5,6 +5,7 @@ import { useStore, showScreen, type State } from '../state/store';
 import { isRecordingState, liveTracks, songById } from '../state/derive';
 import { loadSong, markProject, ping, reload, setMode, setSetlist, setSettings } from '../state/actions';
 import { scripts, scriptsHash } from '../reaper/scripts';
+import { BRIDGE_VERSION } from '../reaper/bridge';
 import { requestStats } from '../reaper/web';
 import type { Mode, Settings, Song, Tag } from '../reaper/types';
 import styles from './Setup.module.css';
@@ -168,7 +169,6 @@ function SettingsCard({ settings, locked }: { settings: Settings | null; locked:
     <section class="card">
       <div class="label">Settings</div>
       <div class={styles.settings}>
-        {item('Song-end tail', 'tail', `${settings.tail} s`, 0.5, 0, 10)}
         {item('Default pre-roll', 'prerollDefault', `${settings.prerollDefault} bars`, 1, 0, 4)}
         {item('[Live] tracks', 'liveCount', String(settings.liveCount), 1, 0, 32)}
         {item('Min. free disk', 'minDiskGB', `${settings.minDiskGB} GB`, 1, 1, 500)}
@@ -194,7 +194,11 @@ function Diagnostics({ st }: { st: State }) {
         ? `Running · session ${b?.session}`
         : st.bridge === 'uploading'
           ? 'Uploading functions…'
-          : 'Not running';
+          : st.bridge === 'pageOutdated'
+            ? 'A newer version of this page uploaded its functions: reload this page'
+          : st.bridge === 'outdated'
+            ? `Out of date: version ${b?.v}, this page needs ${BRIDGE_VERSION}`
+            : 'Not running';
 
   return (
     <section class={`card ${styles.diag}`}>

@@ -61,20 +61,22 @@ export const setSetlist = (ids: string[]) => {
 
 export const setSettings = (patch: Partial<Settings>) => run('settings', () => call('setSettings', patch));
 
-export const setPracticeOptions = (opts: { players?: string[]; mutes?: string[]; rate?: number }) =>
+export const setPracticeOptions = (opts: { players?: string[]; rate?: number }) =>
   run('practice', () => call('setPracticeOptions', opts));
 
-export async function recordPractice(songId: string, partId: string | null, prerollBars: number) {
-  const r = await run('record', () => call('recordPractice', { songId, partId, prerollBars }));
+/** Arm/disarm or mute/unmute players in REAPER; the page shows REAPER's own flags. */
+export const setPlayerState = (players: string[], state: { armed?: boolean; muted?: boolean }) =>
+  run('players', () => call('setPlayerState', { players, ...state }));
+
+/** Practice scope: a song, one part (toPartId null), or parts partId..toPartId. */
+export async function recordPractice(songId: string, partId: string | null, toPartId: string | null, prerollBars: number) {
+  const r = await run('record', () => call('recordPractice', { songId, partId, toPartId, prerollBars }));
   if (r) confirmRecording();
 }
 
-export async function retry() {
-  const r = await run('retry', () => call('retry'));
-  if (r) confirmRecording();
-}
-
-export const playLast = () => run('play', () => call('playLast'));
+/** Play the selected song or part (same scope as Record); live inputs stay as they are. */
+export const play = (songId: string, partId: string | null, toPartId: string | null, prerollBars: number) =>
+  run('play', () => call('play', { songId, partId, toPartId, prerollBars }));
 
 export async function ping(): Promise<number | undefined> {
   const t0 = performance.now();

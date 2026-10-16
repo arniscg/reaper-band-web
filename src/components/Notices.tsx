@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { useStore, showScreen } from '../state/store';
 import { dismissError, dismissWarning } from '../state/actions';
+import { BRIDGE_VERSION } from '../reaper/bridge';
 import styles from './Notices.module.css';
 
 const WATCHDOG_ACK_KEY = 'bandremote.watchdogAck';
@@ -35,9 +36,16 @@ export function Banners() {
   const [dismissedErr, setDismissedErr] = useState<string | null>(null);
   const loopErr = st.bridgeStatus?.err ?? null;
 
-  const items: { text: string; tone: 'bad' | 'warn'; onDismiss?: () => void }[] = [];
+  const items: { text: string; tone: 'bad' | 'warn'; onDismiss?: () => void; action?: string }[] = [];
   if (st.connection === 'offline') items.push({ text: 'Cannot reach REAPER. Check the network and that REAPER is running.', tone: 'bad' });
   else if (st.bridge === 'down') items.push({ text: 'The REAPER bridge script is not running. Controls are unavailable.', tone: 'bad' });
+  else if (st.bridge === 'outdated')
+    items.push({
+      text: `The REAPER bridge script is out of date (version ${st.bridgeStatus?.v ?? '?'}, this page needs ${BRIDGE_VERSION}). Copy the new BandRemote_Bridge.lua to REAPER and restart REAPER.`,
+      tone: 'bad',
+    });
+  if (st.bridge === 'pageOutdated')
+    items.push({ text: 'A newer version of this page is in use. Reload this page to get it.', tone: 'bad', onDismiss: () => location.reload(), action: 'Reload' });
   if (st.warning) items.push({ text: st.warning, tone: 'bad', onDismiss: dismissWarning });
   if (loopErr && loopErr !== dismissedErr && st.bridge === 'ready') items.push({ text: `Bridge error: ${loopErr}`, tone: 'bad', onDismiss: () => setDismissedErr(loopErr) });
   if (watchdog && watchdog.seq > ackSeq) items.push({ text: `Watchdog: ${watchdog.message}`, tone: 'warn', onDismiss: () => setAckSeq(watchdog.seq) });
@@ -50,7 +58,7 @@ export function Banners() {
           <span class={styles.bannerText}>{b.text}</span>
           {b.onDismiss && (
             <button class={styles.dismiss} onClick={b.onDismiss}>
-              Dismiss
+              {b.action ?? 'Dismiss'}
             </button>
           )}
         </div>

@@ -14,7 +14,8 @@ import type {
 } from '../reaper/types';
 
 export type Connection = 'connecting' | 'online' | 'offline';
-export type BridgeState = 'unknown' | 'down' | 'uploading' | 'ready';
+/** outdated: the bridge script is too old; pageOutdated: a newer page uploaded its functions. */
+export type BridgeState = 'unknown' | 'down' | 'outdated' | 'pageOutdated' | 'uploading' | 'ready';
 export type Screen = 'main' | 'setup';
 
 export interface State {

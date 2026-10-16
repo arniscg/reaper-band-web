@@ -15,6 +15,9 @@
 //   stopAtEnd=0 REAPER doesn't stop at the end: the bridge stops 0.5 s later.
 //   bridgeStop=0 the bridge's own stop fails too: the watchdog stops at +2 s.
 //   sws=0 SWS not installed: Setup shows the stop-marker note.
+//   trackMute=<track name>:0|1, trackArm=<track name>:0|1 change a track as if done in REAPER.
+//   bridgeV=N reports bridge protocol version N (the page shows 'out of date' unless it matches).
+//   lib=<fingerprint> pretends another page sealed that function set (e.g. 99999999999999-x = newer build).
 // Inspect state:  http://localhost:8080/mock/state
 
 import http from 'node:http';
@@ -77,15 +80,14 @@ const proj = {
   marker: true,
   mode: 'live',
   setlist: songs.slice(0, 8).map((s) => s.id),
-  settings: { tail: 2, prerollDefault: 2, liveCount: 4, minDiskGB: 5 },
+  settings: { prerollDefault: 2, liveCount: 4, minDiskGB: 5 },
   recordPath: 'Recordings/Live',
-  practice: { players: liveTracks().map((t) => t.guid), mutes: [], rate: 1 },
+  practice: { players: liveTracks().map((t) => t.guid), rate: 1 },
   queued: songs[0].id,
-  lastTake: null,
 };
 
 const transport = { state: 0, pos: songs[0].start - 4, rate: 1, repeat: false, sel: null };
-const mock = { bridge: true, stopAtEnd: true, diskMB: 120_000, hang: false, failFn: '', loopErr: false, slowOnce: false, delayMs: 0, bridgeStop: true, sws: true };
+const mock = { bridge: true, stopAtEnd: true, diskMB: 120_000, hang: false, failFn: '', loopErr: false, slowOnce: false, delayMs: 0, bridgeStop: true, sws: true, bridgeV: 2 };
 
 // ---------------------------------------------------------------------------
 // Transport simulation
@@ -146,7 +148,6 @@ function applyMode(mode) {
     if (hasTag(t, 'practice')) t.mute = !practice;
   }
   if (practice) {
-    applyPracticeTracks();
     transport.rate = proj.practice.rate;
     proj.recordPath = 'Recordings/Practice';
   } else {
@@ -158,11 +159,9 @@ function applyMode(mode) {
   bump('tracks', 'project');
 }
 
-function applyPracticeTracks() {
-  for (const t of liveTracks()) {
-    t.arm = proj.practice.players.includes(t.guid);
-    t.mute = proj.practice.mutes.includes(t.guid);
-  }
+// Practice Record: the chosen players armed, everyone else disarmed (and stays so).
+function armForRecording() {
+  for (const t of liveTracks()) t.arm = proj.practice.players.includes(t.guid);
 }
 
 function checkCommon() {
@@ -171,8 +170,9 @@ function checkCommon() {
   if (mock.diskMB < proj.settings.minDiskGB * 1024) refuse(`Low disk space: ${(mock.diskMB / 1024).toFixed(1)} GB free`);
 }
 
-function startTake(kind, song, part, prerollBars, record) {
-  const range = part ? { start: part.start, end: part.end } : { start: song.start, end: song.end + proj.settings.tail };
+function startTake(kind, song, part, prerollBars, record, toPart = null) {
+  const last = toPart ?? part;
+  const range = part ? { start: part.start, end: last.end } : { start: song.start, end: song.end };
   let start = range.start;
   if (part && part.start > song.start && prerollBars > 0) start = Math.max(song.start, part.start - prerollBars * BAR_SECONDS);
   transport.sel = range;
@@ -262,41 +262,43 @@ const fns = {
   setPracticeOptions: (a) => {
     if (isRecording()) refuse('Cannot change players while recording');
     if (Array.isArray(a.players)) proj.practice.players = a.players;
-    if (Array.isArray(a.mutes)) proj.practice.mutes = a.mutes;
     if (typeof a.rate === 'number') proj.practice.rate = Math.min(1.2, Math.max(0.5, a.rate));
-    if (proj.mode === 'practice') {
-      applyPracticeTracks();
-      transport.rate = proj.practice.rate;
-      bump('tracks');
-    }
+    if (proj.mode === 'practice') transport.rate = proj.practice.rate;
     return proj.practice;
   },
 
-  recordPractice: ({ songId, partId, prerollBars }) => {
+  setPlayerState: ({ players, armed, muted }) => {
+    if (isRecording()) refuse('Arming and muting players is locked while recording');
+    if (proj.mode !== 'practice') refuse('Arming and muting players is only available in Practice mode');
+    let changed = 0;
+    for (const t of liveTracks()) {
+      if (!players.includes(t.guid)) continue;
+      if (typeof armed === 'boolean') t.arm = armed;
+      if (typeof muted === 'boolean') t.mute = muted;
+      changed++;
+    }
+    return { changed };
+  },
+
+  recordPractice: ({ songId, partId, toPartId, prerollBars }) => {
     checkCommon();
     if (proj.mode !== 'practice') refuse('Not in Practice mode');
     const song = songById(songId) ?? refuse('Song not found');
     const part = partId ? song.parts.find((p) => p.id === partId) ?? refuse('Part not found') : null;
     if (proj.practice.players.length === 0) refuse('No players chosen to record');
-    applyPracticeTracks();
+    armForRecording();
     transport.rate = proj.practice.rate;
-    const r = startTake('practice', song, part, prerollBars ?? 0, true);
-    proj.lastTake = { songId, partId: partId ?? null, prerollBars: prerollBars ?? 0, rate: proj.practice.rate, players: [...proj.practice.players] };
+    const toPart = part && toPartId ? song.parts.find((p) => p.id === toPartId) ?? refuse('Part not found') : null;
+    const r = startTake('practice', song, part, prerollBars ?? 0, true, toPart);
     return { recording: true, ...r };
   },
 
-  retry: () => {
-    const last = proj.lastTake ?? refuse('No previous take');
-    return fns.recordPractice(last);
-  },
-
-  playLast: () => {
-    if (isRecording()) refuse('Already recording');
-    const last = proj.lastTake ?? refuse('No previous take');
-    const song = songById(last.songId) ?? refuse('Song not found');
-    const part = last.partId ? song.parts.find((p) => p.id === last.partId) : null;
-    for (const t of liveTracks()) if (last.players.includes(t.guid)) t.recmon = 0;
-    const r = startTake('play', song, part, last.prerollBars, false);
+  play: ({ songId, partId, toPartId, prerollBars }) => {
+    if (isRecording()) refuse('Play is locked while recording');
+    const song = songById(songId) ?? refuse('Song not found');
+    const part = partId ? song.parts.find((p) => p.id === partId) ?? refuse('Part not found') : null;
+    const toPart = part && toPartId ? song.parts.find((p) => p.id === toPartId) ?? refuse('Part not found') : null;
+    const r = startTake('play', song, part, prerollBars ?? 0, false, toPart);
     return { playing: true, ...r };
   },
 };
@@ -329,7 +331,6 @@ function tick() {
     } else if (a.kind === 'practice') {
       bridge.event = notice(`Take saved · ${how}`);
     } else if (a.kind === 'play') {
-      for (const t of liveTracks()) t.recmon = 1;
       bridge.event = notice(`Playback ended · ${how}`);
     }
   }
@@ -355,8 +356,7 @@ function appStatus() {
     queued: proj.queued,
     rate: transport.rate,
     active: a ? { kind: a.kind, songId: a.songId, partId: a.partId } : null,
-    practice: { players: proj.practice.players, mutes: proj.practice.mutes },
-    lastTake: proj.lastTake,
+    practice: { players: proj.practice.players },
     watchdog: bridge.watchdog,
     event: bridge.event,
     counters: bridge.counters,
@@ -367,20 +367,29 @@ function respond(id, body) {
   const json = JSON.stringify({ id, ...body });
   const chunks = [];
   for (let i = 0; i < json.length; i += RESP_CHUNK) chunks.push(json.slice(i, i + RESP_CHUNK));
-  for (let i = 1; i < chunks.length; i++) setExt(SECTION, `resp${i}`, chunks[i]);
-  setExt(SECTION, 'resp', `${id}|${chunks.length}|${chunks[0]}`);
+  for (let i = 1; i < chunks.length; i++) setExt(SECTION, `r.${id}.${i}`, chunks[i]);
+  setExt(SECTION, `r.${id}`, `${chunks.length}|${chunks[0]}`);
 }
 
-function handleRequest() {
-  const req = getExt(SECTION, 'req');
-  if (!req) return;
-  setExt(SECTION, 'req', '');
-  const m = /^([\w-]+):(\d+):?(\d*)$/.exec(req);
-  if (!m) return;
+const done = new Set(); // recently run request ids (never run twice), like the bridge
+
+function handleRequests() {
+  for (let slot = 0; slot < 8; slot++) {
+    const req = getExt(SECTION, `req.${slot}`);
+    if (!req) continue;
+    setExt(SECTION, `req.${slot}`, '');
+    handleRequest(req);
+  }
+}
+
+function handleRequest(req) {
+  const m = /^([\w-]+):(\d+):(\d+)$/.exec(req);
+  if (!m || done.has(m[1])) return;
+  done.add(m[1]);
   const [, id, n, len] = m;
   let b64 = '';
-  for (let i = 0; i < Number(n); i++) { b64 += getExt(SECTION, `c${i}`); delExt(SECTION, `c${i}`); }
-  if (len && b64.length !== Number(len)) {
+  for (let i = 0; i < Number(n); i++) { b64 += getExt(SECTION, `c.${id}.${i}`); delExt(SECTION, `c.${id}.${i}`); }
+  if (b64.length !== Number(len)) {
     respond(id, { ok: false, error: `The request was cut off on the way to REAPER: ${b64.length} of ${len} characters arrived.` });
     return;
   }
@@ -405,10 +414,10 @@ function handleRequest() {
 function bridgeLoop() {
   advance();
   if (!mock.bridge) return;
-  handleRequest();
+  handleRequests();
   tick();
   const status = JSON.stringify({
-    v: 1, session: bridge.session, lib: bridge.lib, hb: Math.floor(Date.now() / 250) % 100000,
+    v: mock.bridgeV, session: bridge.session, lib: bridge.lib, hb: Math.floor(Date.now() / 250) % 100000,
     err: mock.loopErr ? "tick: tick.lua:40: attempt to compare nil with number\nstack traceback:\n\ttick.lua:40: in main chunk" : null,
     app: bridge.lib ? appStatus() : null,
   });
@@ -492,6 +501,13 @@ const server = http.createServer((req, res) => {
       if (k === 'slowOnce') mock.slowOnce = v === '1';
       if (k === 'bridgeStop') mock.bridgeStop = v === '1';
       if (k === 'sws') { mock.sws = v === '1'; bump('project'); }
+      if (k === 'bridgeV') mock.bridgeV = Number(v);
+      if (k === 'lib') bridge.lib = v;
+      if (k === 'trackMute' || k === 'trackArm') {
+        const i = v.lastIndexOf(':');
+        const t = tracks.find((x) => x.name === v.slice(0, i));
+        if (t) t[k === 'trackMute' ? 'mute' : 'arm'] = v.slice(i + 1) === '1';
+      }
       if (k === 'delayMs') mock.delayMs = Number(v) || 0;
       if (k === 'marker') { proj.marker = v === '1'; bump('project'); }
     }

@@ -9,8 +9,7 @@
 --            queued    = song guid (absent if none),
 --            rate      = master playrate,
 --            active    = { kind = "live"|"practice"|"play", songId, partId } (absent if none),
---            practice  = { players = [guid], mutes = [guid] },
---            lastTake  = { songId, partId, prerollBars, rate, players, ... } (absent if none),
+--            practice  = { players = [guid] }   (recorded by Record),
 --            watchdog  = { seq, message } (absent if none),
 --            event     = { seq, message } (absent if none),
 --            counters  = { project, changes, data } }
@@ -30,8 +29,7 @@ if S.statusKey ~= key then
   S.statusKey = key
   local opts = U.practice()
   S.statusCache = {
-    practice = { players = opts.players, mutes = opts.mutes },
-    lastTake = U.getJSON("lastTake", nil),
+    practice = { players = opts.players },
   }
 end
 
@@ -45,7 +43,6 @@ return {
   rate = R.Master_GetPlayRate(proj),
   active = a and { kind = a.kind, songId = a.songId, partId = a.partId } or nil,
   practice = S.statusCache.practice,
-  lastTake = S.statusCache.lastTake,
   watchdog = S.watchdog,
   event = S.event,
   counters = { project = project, changes = changes, data = S.data or 0 },

@@ -64,6 +64,34 @@
   border-color: var(--practice);
 }
 
+.partHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.scope {
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hint {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Parts inside a range: joined to the one above into one block. */
+.joined {
+  margin-top: -6px;
+  border-top-color: var(--practice-tint);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 .divider {
   padding: 10px 4px 4px;
   font-size: 14px;
@@ -117,6 +145,17 @@
   color: var(--practice-ink);
 }
 
+.allButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.playerToggles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
 .playerMute,
 .muteAll {
   display: flex;
@@ -136,6 +175,30 @@
 .muteAll {
   min-height: 44px;
   white-space: nowrap;
+}
+
+.playerMute {
+  min-height: 40px;
+  padding: 0 6px;
+  gap: 4px;
+  font-size: 15px;
+}
+
+.playerMute svg,
+.muteAll svg {
+  flex-shrink: 0;
+}
+
+.armedOn {
+  background: var(--rec-tint);
+  border-color: var(--rec);
+  color: var(--rec);
+}
+
+.disarmedOn {
+  background: var(--surface-2);
+  border-color: var(--faint);
+  color: var(--faint);
 }
 
 .muteOn {
@@ -233,18 +296,13 @@
   font-weight: 700;
 }
 
-.lastTake {
-  font-size: 17px;
-  color: var(--muted);
-}
-
 /* Action buttons */
 
 .buttons {
   flex-shrink: 0;
-  height: 250px;
+  height: 180px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap);
 }
 
@@ -256,7 +314,7 @@
   border-radius: 22px;
   background: var(--surface);
   border: 2px solid var(--border);
-  font-size: 38px;
+  font-size: 36px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;

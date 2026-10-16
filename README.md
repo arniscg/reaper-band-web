@@ -2,7 +2,7 @@
 
 A web page for an iPad that controls the band's REAPER show project over the local network:
 **Live** mode (setlist, Load / Start / Hold-to-stop) and **Practice** mode (songs or parts, pre-roll,
-chosen players, tempo, Play last, Retry). Spec and mockups: [spec/](spec/).
+players to record, arm/mute per player, tempo, Record / Play / Stop). Spec and mockups: [spec/](spec/).
 
 - `src/` – the page (Preact + TypeScript + Vite), built to one self-contained `dist/index.html`
 - `reaper/BandRemote_Bridge.lua` – background script in REAPER that runs requests from the page

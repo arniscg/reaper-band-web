@@ -9,8 +9,8 @@
 --   master playrate      1.0                     practice rate
 --   preserve pitch       (unchanged)             on
 --   record mode          normal                  time-selection auto-punch
---   [Live] tracks        all armed, unmuted      chosen players armed, others
---                                                disarmed; player mutes applied
+--   [Live] tracks        all armed, unmuted      unchanged (arm/mute per player
+--                                                in Practice: setPlayerState)
 --   record path          Recordings/Live         Recordings/Practice
 --
 -- args:    { mode = "live" | "practice" }
@@ -40,7 +40,6 @@ if mode == "live" then
 else
   local opts = U.practice()
   U.setJSON("practice", opts) -- keep the defaults so status shows them
-  U.applyPracticeTracks(opts)
   U.ensureToggle("preservePitch", true)
   U.setRate(opts.rate)
   U.ensureOn("recTimeSel")

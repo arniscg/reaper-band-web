@@ -16,7 +16,7 @@
 --   "stop playback at end of loop if repeat is disabled" on
 --   no track or global override in a writing automation mode
 --   record path Recordings/Live
--- Then: time selection and loop points = song start .. song end + tail;
+-- Then: time selection and loop points = the song region;
 -- cursor to song start; record. tick handles the song end and the watchdog.
 --
 -- args:    { id = song guid }
@@ -59,7 +59,7 @@ U.ensureToggle("stopAtLoopEnd", true)
 U.fixAutomation(fixed)
 U.setRecordPath("Recordings/Live")
 
-local stop_at = song["end"] + settings.tail
+local stop_at = song["end"]
 U.setRange(song.start, stop_at)
 R.SetEditCurPos2(0, song.start, true, false)
 U.startTake({ kind = "live", songId = song.id, start = song.start, stopAt = stop_at }) -- before starting: sets REAPER's stop point

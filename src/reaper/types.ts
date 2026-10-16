@@ -52,7 +52,6 @@ export interface TaggedTrack {
 }
 
 export interface Settings {
-  tail: number;
   prerollDefault: number;
   liveCount: number;
   minDiskGB: number;
@@ -81,14 +80,6 @@ export interface Notice {
   message: string;
 }
 
-export interface LastTake {
-  songId: string;
-  partId?: string | null;
-  prerollBars: number;
-  rate: number;
-  players: string[];
-}
-
 /** Returned by status.lua, published every tick as status.app. */
 export interface AppStatus {
   marker: boolean;
@@ -96,8 +87,8 @@ export interface AppStatus {
   queued?: string | null;
   rate: number;
   active?: { kind: 'live' | 'practice' | 'play'; songId: string; partId?: string | null } | null;
-  practice: { players: string[]; mutes: string[] };
-  lastTake?: LastTake | null;
+  /** Players that Record records. Arm/mute come from REAPER's track flags. */
+  practice: { players: string[] };
   watchdog?: Notice | null;
   event?: Notice | null;
   counters: Record<string, number | string>;

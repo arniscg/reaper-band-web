@@ -4,7 +4,7 @@
 // and refetches data when the bridge's change counters move.
 
 import { request, parseTrack, parseTransport, extValue } from '../reaper/web';
-import { SECTION, call, scriptsHash, uploadScripts } from '../reaper/bridge';
+import { BRIDGE_VERSION, BUILD_TIME, SECTION, buildTimeOf, call, scriptsHash, uploadScripts } from '../reaper/bridge';
 import type { BridgeStatus, ProjectInfo, Settings, Song, TaggedTrack } from '../reaper/types';
 import { getState, setState } from './store';
 import { isRecordingState } from './derive';
@@ -77,7 +77,18 @@ function updateBridge(status: BridgeStatus | null): void {
     setState({ bridge: 'down' });
     return;
   }
+  if (status.v !== BRIDGE_VERSION) {
+    if (getState().bridge !== 'outdated') setState({ bridge: 'outdated' });
+    return;
+  }
   if (status.lib !== scriptsHash) {
+    // A newer build's functions are in the bridge: don't overwrite them with
+    // older ones (two versions would keep re-uploading); ask for a reload.
+    const theirs = buildTimeOf(status.lib);
+    if (theirs !== null && theirs > BUILD_TIME) {
+      if (getState().bridge !== 'pageOutdated') setState({ bridge: 'pageOutdated' });
+      return;
+    }
     if (!uploading && now - uploadFailedAt > UPLOAD_RETRY_MS) void upload();
     return;
   }

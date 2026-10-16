@@ -42,6 +42,11 @@ export function isArmed(st: State, index: number): boolean {
   return !!t && (t.flags & TrackFlag.armed) !== 0;
 }
 
+export function isMuted(st: State, index: number): boolean {
+  const t = st.nativeTracks.find((n) => n.index === index);
+  return !!t && (t.flags & TrackFlag.muted) !== 0;
+}
+
 export function fmtTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;

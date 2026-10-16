@@ -15,11 +15,19 @@
 --
 -- ## Transport: global ext state, section "BandRemote" (never persisted)
 --
+-- Several pages may be open at once. Chunk and answer keys carry the request
+-- id, so pages can't overwrite each other's. Each page sends requests through
+-- one of 8 request slots (picked at random when it loads), and the bridge
+-- serves every slot each tick. If two pages share a slot and one request is
+-- overwritten, that page writes it again; the bridge remembers recent ids, so
+-- a request never runs twice.
+--
 -- Page -> bridge
---   c0 .. cN-1   Request chunks. Concatenated they are base64url (UTF-8) of
+--   c.<id>.0 .. c.<id>.N-1
+--                Request chunks. Concatenated they are base64url (UTF-8) of
 --                  "<kind> <name>\n<payload>"
---   req          "<id>:<N>:<length>". Written last; the bridge acts on it,
---                then clears it and deletes the chunks. <length> is the
+--   req.<slot>   "<id>:<N>:<length>", slot 0..7. Written last; the bridge
+--                acts on it, then clears it and deletes the chunks. <length> is the
 --                total chunk length, to detect values cut off on the way
 --                (REAPER's web server keeps only ~1024 chars of a value).
 --
@@ -30,8 +38,9 @@
 --   kind "call"  name = function name, payload = JSON of the arguments.
 --
 -- Bridge -> page
---   resp         "<id>|<M>|<first chunk>". The response JSON split in M
---                chunks; chunks 2..M are in resp1 .. resp(M-1).
+--   r.<id>       "<M>|<first chunk>". The response JSON split in M chunks;
+--                chunks 2..M are in r.<id>.1 .. r.<id>.(M-1). Deleted by the
+--                bridge after a minute.
 --                { "id": ..., "ok": true, "result": ... }
 --                { "id": ..., "ok": false, "error": "message" }
 --   status       JSON, rewritten when it changes:
@@ -54,7 +63,7 @@
 --     B.state          table kept across re-uploads (lost on REAPER restart)
 --     B.section, B.session
 
-local BRIDGE_VERSION = 1
+local BRIDGE_VERSION = 2 -- the page checks this; bump on protocol changes
 local SECTION = "BandRemote"
 local RESP_CHUNK = 12000 -- keep each ext state value well below 16 KB
 
@@ -260,7 +269,11 @@ local session = string.format("%06x%04x", math.floor(R.time_precise() * 1000) % 
 local functions = {}  -- name -> compiled chunk
 local lib = nil       -- hash of the sealed set; nil while uploading
 local loop_error = nil
-local last_req = nil
+local REQ_SLOTS = 8
+local done, done_order = {}, {} -- recently run request ids (never run twice)
+local DONE_KEEP = 500
+local answers = {} -- { keys = {...}, at = time } for cleanup
+local ANSWER_LIFETIME = 60
 local last_status = nil
 
 local B = {
@@ -295,8 +308,22 @@ local function respond(id, ok, result)
   end
   local chunks = {}
   for i = 1, #body, RESP_CHUNK do chunks[#chunks + 1] = body:sub(i, i + RESP_CHUNK - 1) end
-  for i = 2, #chunks do set("resp" .. (i - 1), chunks[i]) end
-  set("resp", id .. "|" .. #chunks .. "|" .. chunks[1])
+  local key = "r." .. id
+  local keys = { key }
+  for i = 2, #chunks do
+    set(key .. "." .. (i - 1), chunks[i])
+    keys[#keys + 1] = key .. "." .. (i - 1)
+  end
+  set(key, #chunks .. "|" .. chunks[1])
+  answers[#answers + 1] = { keys = keys, at = R.time_precise() }
+end
+
+local function delete_old_answers()
+  local now = R.time_precise()
+  while answers[1] and now - answers[1].at > ANSWER_LIFETIME do
+    for _, k in ipairs(answers[1].keys) do R.DeleteExtState(SECTION, k, false) end
+    table.remove(answers, 1)
+  end
 end
 
 local function define(name, source)
@@ -324,21 +351,21 @@ local function run(kind, name, payload)
   error("unknown request kind: " .. tostring(kind), 0)
 end
 
-local function handle_request()
-  local req = R.GetExtState(SECTION, "req")
-  if req == "" or req == last_req then return end
-  last_req = req
-  set("req", "")
-  local id, n, len = req:match("^([%w_%-]+):(%d+):?(%d*)$")
-  if not id then return end
+local function handle_request(req)
+  local id, n, len = req:match("^([%w_%-]+):(%d+):(%d+)$")
+  if not id or done[id] then return end
+  done[id] = true
+  done_order[#done_order + 1] = id
+  if #done_order > DONE_KEEP then done[table.remove(done_order, 1)] = nil end
   local parts = {}
   for i = 0, tonumber(n) - 1 do
-    parts[#parts + 1] = R.GetExtState(SECTION, "c" .. i)
-    R.DeleteExtState(SECTION, "c" .. i, false)
+    local key = "c." .. id .. "." .. i
+    parts[#parts + 1] = R.GetExtState(SECTION, key)
+    R.DeleteExtState(SECTION, key, false)
   end
   local ok, result = xpcall(function()
     local data = table.concat(parts)
-    if len ~= "" and #data ~= tonumber(len) then
+    if #data ~= tonumber(len) then
       error(string.format("The request was cut off on the way to REAPER: %d of %d characters arrived.", #data, tonumber(len)), 0)
     end
     local text = b64decode(data)
@@ -370,8 +397,16 @@ local function write_status()
 end
 
 local function loop()
-  local ok, err = xpcall(handle_request, on_error)
-  if not ok then loop_error = "request: " .. tostring(err) end
+  for slot = 0, REQ_SLOTS - 1 do
+    local key = "req." .. slot
+    local req = R.GetExtState(SECTION, key)
+    if req ~= "" then
+      set(key, "")
+      local ok, err = xpcall(handle_request, on_error, req)
+      if not ok then loop_error = "request: " .. tostring(err) end
+    end
+  end
+  delete_old_answers()
   if lib and functions.tick then
     local ok2, err2 = xpcall(functions.tick, on_error, {})
     if not ok2 then loop_error = "tick: " .. tostring(err2) end
@@ -382,6 +417,5 @@ end
 
 R.atexit(function() R.SetExtState(SECTION, "status", "", false) end)
 
-set("req", "")
-set("resp", "")
+for slot = 0, REQ_SLOTS - 1 do set("req." .. slot, "") end
 loop()

@@ -35,20 +35,20 @@ const ext = async (key) => {
 };
 
 async function send(kind, name, payload) {
-  const id = `cli${Date.now().toString(36)}`;
+  const id = `cli${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
   const data = Buffer.from(`${kind} ${name}\n${payload}`).toString('base64url');
   const chunks = [];
   for (let i = 0; i < data.length; i += CHUNK) chunks.push(data.slice(i, i + CHUNK));
-  for (let i = 0; i < chunks.length; i++) await request([`SET/EXTSTATE/${SECTION}/c${i}/${chunks[i]}`]);
-  await request([`SET/EXTSTATE/${SECTION}/req/${id}:${chunks.length}:${data.length}`]);
+  for (let i = 0; i < chunks.length; i++) await request([`SET/EXTSTATE/${SECTION}/c.${id}.${i}/${chunks[i]}`]);
+  await request([`SET/EXTSTATE/${SECTION}/req.${Math.floor(Math.random() * 8)}/${id}:${chunks.length}:${data.length}`]);
   const deadline = Date.now() + 30000;
   while (Date.now() < deadline) {
     await new Promise((r) => setTimeout(r, 100));
-    const head = await ext('resp');
-    const m = /^([^|]*)\|(\d+)\|([\s\S]*)$/.exec(head);
-    if (!m || m[1] !== id) continue;
-    let json = m[3];
-    for (let i = 1; i < Number(m[2]); i++) json += await ext(`resp${i}`);
+    const head = await ext(`r.${id}`);
+    const m = /^(\d+)\|([\s\S]*)$/.exec(head);
+    if (!m) continue;
+    let json = m[2];
+    for (let i = 1; i < Number(m[1]); i++) json += await ext(`r.${id}.${i}`);
     return JSON.parse(json);
   }
   throw new Error('no answer from the bridge within 30 s');

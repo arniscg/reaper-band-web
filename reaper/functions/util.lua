@@ -138,11 +138,11 @@ function U.applyBackingMutes(mode)
   for _, t in ipairs(U.withTag(tracks, "practice")) do U.mute(t.tr, mode ~= "practice") end
 end
 
--- Practice: chosen players armed, the others disarmed; player mutes applied.
-function U.applyPracticeTracks(opts)
+-- Practice Record: the chosen players armed, everyone else disarmed (and
+-- they stay disarmed afterwards). Mutes are left as they are.
+function U.armForRecording(players)
   for _, t in ipairs(U.withTag(U.tracks(), "live")) do
-    U.arm(t.tr, U.contains(opts.players, t.guid))
-    U.mute(t.tr, U.contains(opts.mutes, t.guid))
+    U.arm(t.tr, U.contains(players, t.guid))
   end
 end
 
@@ -294,6 +294,34 @@ function U.checkDisk(settings)
   if free >= 0 and free < settings.minDiskGB * 1024 then
     error(string.format("Low disk space: %.1f GB free on the record drive, minimum %g GB", free / 1024, settings.minDiskGB), 0)
   end
+end
+
+-- Find a part of a song by id; nil id = whole song. Refuses unknown ids.
+function U.findPart(song, part_id)
+  if not part_id then return nil end
+  for _, p in ipairs(song.parts) do
+    if p.id == part_id then return p end
+  end
+  error("Part not found in " .. song.name, 0)
+end
+
+-- Scope of a practice take or playback: a part, a range of parts (part ..
+-- to_part), or the whole song. start = first part's start minus pre-roll
+-- bars (tempo map), never before the song start; no pre-roll for a whole
+-- song or a part at the song start. Returns start, range_start, range_end.
+function U.practiceScope(song, part, preroll_bars, to_part)
+  if part and to_part and to_part.start < part.start then part, to_part = to_part, part end
+  local last = to_part or part
+  local range_start = part and part.start or song.start
+  local range_end = last and last["end"] or song["end"]
+  local start = range_start
+  local bars = math.floor(tonumber(preroll_bars) or 0)
+  if part and part.start > song.start + 0.001 and bars > 0 then
+    local beats, measures = R.TimeMap2_timeToBeats(0, part.start)
+    start = R.TimeMap2_beatsToTime(0, beats, math.max(0, measures - bars))
+    if start < song.start then start = song.start end
+  end
+  return start, range_start, range_end
 end
 
 -- Time selection and loop points: REAPER stops at the loop end when repeat

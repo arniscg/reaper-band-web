@@ -1,6 +1,6 @@
 -- tick  (run by the bridge loop every defer tick, ~30 times a second)
 --
--- Watches the take started by startLive / recordPractice / playLast
+-- Watches the take started by startLive / recordPractice / play
 -- (B.state.active). The end of a take is covered in three layers:
 --   1. REAPER stops by itself at the stop points set by startTake: the SWS
 --      stop marker (playback and recording) and PLAYBACK_STOP (playback);
@@ -10,7 +10,7 @@
 --      duration, e.g. if it looped) -> stop again and flag it for the page
 --
 -- After stop: once the transport has run and is stopped again:
---   - undo what the take set up (stop marker, PLAYBACK_STOP, Play last monitoring)
+--   - undo what the take set up (stop marker, PLAYBACK_STOP)
 --   - save the project; media was saved by the stop
 --   - Live: cursor to the song end, so instruments keep the ended song's
 --     sound; queue the setlist song after the one just played (not loaded)

@@ -26,4 +26,13 @@ function hash(text: string): string {
   return (h >>> 0).toString(16).padStart(8, '0');
 }
 
-export const scriptsHash = hash(scripts.map((s) => `${s.name}\n${s.source}`).join('\u0000'));
+export const BUILD_TIME: number = __BUILD_TIME__;
+
+/** "<build time>-<content hash>": sealed into the bridge after an upload. */
+export const scriptsHash = `${BUILD_TIME}-${hash(scripts.map((s) => `${s.name}\n${s.source}`).join('\u0000'))}`;
+
+/** Build time of another page's uploaded set, or null if it has none (old format). */
+export function buildTimeOf(lib: string | null | undefined): number | null {
+  const m = /^(\d+)-/.exec(lib ?? '');
+  return m ? Number(m[1]) : null;
+}
