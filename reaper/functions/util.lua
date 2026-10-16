@@ -131,6 +131,17 @@ function U.mute(tr, on)
   R.SetMediaTrackInfo_Value(tr, "B_MUTE", on and 1 or 0)
 end
 
+-- Reference on: the [Reference] tracks unmuted and soloed in place (so their
+-- routing still works). Off: unsoloed and muted again, as they normally are.
+function U.setReference(on, tracks)
+  local refs = U.withTag(tracks or U.tracks(), "reference")
+  for _, t in ipairs(refs) do
+    R.SetMediaTrackInfo_Value(t.tr, "I_SOLO", on and 2 or 0)
+    U.mute(t.tr, not on)
+  end
+  return #refs
+end
+
 -- [Show] unmuted / [Practice] muted in Live, the other way round in Practice.
 function U.applyBackingMutes(mode)
   local tracks = U.tracks()

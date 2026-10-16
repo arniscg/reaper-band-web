@@ -351,3 +351,25 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* Reference toggle: solid when the original recording is soloed. */
+.reference {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 0 18px;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  border: 2px solid var(--border);
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.referenceOn {
+  background: var(--practice);
+  border-color: var(--practice);
+  color: var(--practice-ink);
+}

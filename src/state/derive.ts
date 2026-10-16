@@ -47,6 +47,15 @@ export function isMuted(st: State, index: number): boolean {
   return !!t && (t.flags & TrackFlag.muted) !== 0;
 }
 
+/** Reference toggle: on when every [Reference] track is soloed (either solo kind) and unmuted. */
+export function referenceOn(st: State): boolean {
+  const refs = st.tracks.filter((t) => t.tags.includes('reference'));
+  return refs.length > 0 && refs.every((r) => {
+    const t = st.nativeTracks.find((n) => n.index === r.index);
+    return !!t && (t.flags & (TrackFlag.soloed | TrackFlag.soloInPlace)) !== 0 && (t.flags & TrackFlag.muted) === 0;
+  });
+}
+
 export function fmtTime(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;

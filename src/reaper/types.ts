@@ -2,7 +2,7 @@
 // bridge function results (see reaper/functions/*.lua for the contracts).
 
 export type Mode = 'live' | 'practice';
-export type Tag = 'live' | 'show' | 'practice';
+export type Tag = 'live' | 'show' | 'practice' | 'reference';
 
 /** Native TRANSPORT line. state: 0 stopped, 1 playing, 2 paused, 5 recording, 6 record paused. */
 export interface Transport {
@@ -21,6 +21,8 @@ export interface NativeTrack {
 export const TrackFlag = {
   folder: 1,
   muted: 8,
+  soloed: 16,
+  soloInPlace: 32,
   armed: 64,
   monitoring: 128,
 } as const;

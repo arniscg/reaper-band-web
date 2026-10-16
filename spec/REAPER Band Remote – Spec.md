@@ -26,6 +26,7 @@ The page finds everything by name, so the project follows a few fixed convention
 | `[Live]` | Input tracks only, never folders; one track = one player | Armed, monitored, unmuted, all recorded | Armed and muted per player from the page (REAPER's own state); Record arms the chosen players and disarms the others | `Bass [Live]` |
 | `[Show]` | Any track, folder or not | Unmuted | Muted | `Show backing [Show]` |
 | `[Practice]` | Any track, folder or not | Muted | Unmuted | `Drums MIDI [Practice]` |
+| `[Reference]` | The original recording we cover | Muted, unsoloed | Muted; the Reference toggle solos it | `Original [Reference]` |
 
 Mode switching mutes or unmutes only the tagged track itself; REAPER's own folder muting covers anything inside a tagged folder.
 
@@ -99,7 +100,7 @@ Live mode is one big three-state button plus the setlist; everything shown comes
 **Start function (one bridge call).**
 
 1. Pre-flight checks (see Safety). All refusals come first; on any refusal nothing changes and the message is shown in big letters.
-2. Fixes: all `[Live]` tracks armed, unmuted, record input on, monitoring on; playrate 1.0; `[Show]`/`[Practice]` mutes; record mode normal; repeat off.
+2. Fixes: all `[Live]` tracks armed, unmuted, record input on, monitoring on; playrate 1.0; `[Show]`/`[Practice]` mutes; `[Reference]` muted and unsoloed; record mode normal; repeat off.
 3. Time selection and loop points = the song region; REAPER's stop points set at its end (see Song end). There is no tail: each song region must include the song's full ring-out.
 4. Move to the song start and record.
 5. Return the armed tracks. The page shows "recording" from the poll and warns if REAPER hasn't confirmed recording with those tracks armed within 2 s; the bridge also reports if REAPER never starts within 3 s.
@@ -133,6 +134,7 @@ Practice mode keeps everything from Live mode and adds part selection, pre-roll,
 | --- | --- | --- |
 | `[Show]` tracks | Unmuted | Muted |
 | `[Practice]` tracks | Muted | Unmuted |
+| `[Reference]` tracks | Muted, unsoloed | Muted, unsoloed (Reference off) |
 | Master playrate | 1.0 | Chosen tempo % |
 | Preserve pitch on playrate change | Unchanged | On |
 | Record mode | Normal | Time-selection auto-punch |
@@ -148,7 +150,7 @@ The current mode, the players chosen for recording and the tempo are saved in th
 - Pre-roll: 0–4 bars, remembered by the page; shown as "From start" where it doesn't apply.
 - Tempo: 50–120% in 5% steps, plus reset to 100%.
 - Buttons: Record, Play, Stop.
-- Status line: REC / PLAYING / STOPPED, current song and part, time.
+- Status line: REC / PLAYING / STOPPED, current song and part, time, and the **Reference** toggle (shown only when the project has a `[Reference]` track).
 
 **Record.** One bridge call, the same pre-flight idea as Live minus the mode-specific checks:
 
@@ -160,6 +162,8 @@ The current mode, the players chosen for recording and the tempo are saved in th
 **Play.** One bridge call: play the selected song or part with the same scope as Record (pre-roll; end of the part, range or song) at the current tempo. Arming and track mutes stay as they are: armed players play along live, so their own earlier takes in the play range are muted for this playback (unmuted again when it stops); disarmed players hear their takes. Only items the bridge muted are unmuted, and any it left muted (e.g. if the bridge stopped mid-play) are unmuted at the next Play, Record, Start or mode switch. The newest recording is the active take, so it's what plays. Nothing is remembered between takes: the selection stays on screen, so recording again is just Record.
 
 After a stop, REAPER returns the cursor to where the take started, so Play or Record repeats the same spot.
+
+**Reference.** A toggle to compare our audio with the original song. On unmutes the `[Reference]` tracks and solos them in place (their routing still works), so only the original is heard; off unsolos and mutes them again. It works at any time, also while playing or recording (it only changes what is heard, never what is recorded). The toggle shows REAPER's own solo and mute flags, so soloing the track in REAPER shows up too. Enter Live, Enter Practice and Live Start switch it off.
 
 **Tempo.** Uses REAPER's master playrate with preserve pitch, never the project tempo. It's one number, reset to 1.0 by Enter Live and by Live Start. `[Practice]` MIDI drums follow any rate cleanly; rendered backing tracks are stretched and fine for practice in roughly the 70–110% range.
 

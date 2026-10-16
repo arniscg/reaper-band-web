@@ -31,6 +31,7 @@ export function Setup() {
 const MODE_TABLE: [string, string, string][] = [
   ['[Show] tracks', 'Unmuted', 'Muted'],
   ['[Practice] tracks', 'Muted', 'Unmuted'],
+  ['[Reference] track', 'Muted', 'Muted · Reference toggle solos it'],
   ['Playrate', '100%', 'Practice tempo'],
   ['Record mode', 'Normal', 'Time-selection auto-punch'],
   ['[Live] tracks', 'All armed', 'Chosen armed, others disarmed'],

@@ -44,7 +44,8 @@ const tracks = [
   { name: 'Vocals [Live]', depth: 0 },
   { name: 'Guitar 1 [Live]', depth: 0 },
   { name: 'Guitar 2 [Live]', depth: 0 },
-].map((t) => ({ ...t, guid: guid(), mute: false, arm: false, mon: 0, recmon: 1 }));
+  { name: 'Original [Reference]', depth: 0, mute: true },
+].map((t) => ({ mute: false, ...t, guid: guid(), arm: false, mon: 0, recmon: 1, solo: 0 }));
 
 const tagsOf = (name) => [...name.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1].trim().toLowerCase());
 const hasTag = (t, tag) => tagsOf(t.name).includes(tag);
@@ -146,6 +147,7 @@ function applyMode(mode) {
   for (const t of tracks) {
     if (hasTag(t, 'show')) t.mute = practice;
     if (hasTag(t, 'practice')) t.mute = !practice;
+    if (hasTag(t, 'reference')) { t.mute = true; t.solo = 0; }
   }
   if (practice) {
     transport.rate = proj.practice.rate;
@@ -200,7 +202,7 @@ const fns = {
   getTracks: () => ({
     tracks: tracks.map((t, i) => ({
       guid: t.guid, index: i + 1, name: t.name,
-      label: t.name.replace(/\s*\[[^\]]*\]/g, '').trim(), tags: tagsOf(t.name).filter((x) => ['live', 'show', 'practice'].includes(x)),
+      label: t.name.replace(/\s*\[[^\]]*\]/g, '').trim(), tags: tagsOf(t.name).filter((x) => ['live', 'show', 'practice', 'reference'].includes(x)),
       folder: t.depth === 1,
     })),
   }),
@@ -239,6 +241,7 @@ const fns = {
     if (live.length !== proj.settings.liveCount) refuse(`Expected ${proj.settings.liveCount} [Live] tracks, found ${live.length}`);
     if (proj.mode !== 'live') applyMode('live');
     for (const t of live) { t.arm = true; t.mute = false; }
+    for (const t of tracks.filter((x) => hasTag(x, 'reference'))) { t.mute = true; t.solo = 0; }
     transport.rate = 1;
     transport.repeat = false;
     proj.recordPath = 'Recordings/Live';
@@ -278,6 +281,14 @@ const fns = {
       changed++;
     }
     return { changed };
+  },
+
+  setReference: ({ on }) => {
+    if (proj.mode !== 'practice') refuse('The reference is only available in Practice mode');
+    const refs = tracks.filter((t) => hasTag(t, 'reference'));
+    if (!refs.length) refuse('No [Reference] track in the project');
+    for (const t of refs) { t.solo = on ? 2 : 0; t.mute = !on; }
+    return { on, tracks: refs.length };
   },
 
   recordPractice: ({ songId, partId, toPartId, prerollBars }) => {
@@ -435,7 +446,7 @@ const fmtTime = (s) => {
 };
 
 function trackFlags(t) {
-  return (t.depth === 1 ? 1 : 0) | (t.mute ? 8 : 0) | (t.arm ? 64 : 0) | (t.arm && t.recmon === 1 ? 128 : 0);
+  return (t.depth === 1 ? 1 : 0) | (t.mute ? 8 : 0) | (t.solo ? 16 : 0) | (t.solo === 2 ? 32 : 0) | (t.arm ? 64 : 0) | (t.arm && t.recmon === 1 ? 128 : 0);
 }
 
 function command(cmd) {

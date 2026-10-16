@@ -6,6 +6,7 @@
 --   setting              live                    practice
 --   [Show] tracks        unmuted                 muted
 --   [Practice] tracks    muted                   unmuted
+--   [Reference] tracks   muted, unsoloed         muted, unsoloed (Reference toggle off)
 --   master playrate      1.0                     practice rate
 --   preserve pitch       (unchanged)             on
 --   record mode          normal                  time-selection auto-punch
@@ -30,6 +31,7 @@ U.stopIfPlaying()
 U.unmuteMarkedTakes()
 
 U.applyBackingMutes(mode)
+U.setReference(false)
 if mode == "live" then
   for _, t in ipairs(U.withTag(U.tracks(), "live")) do
     U.arm(t.tr, true)

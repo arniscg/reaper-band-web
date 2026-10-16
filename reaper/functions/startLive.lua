@@ -12,7 +12,7 @@
 -- Then fixed silently:
 --   all [Live] tracks armed, unmuted, record input on, monitoring on,
 --   "monitor track media when recording" off (earlier shows don't play along)
---   master playrate 1.0; [Show] unmuted, [Practice] muted
+--   master playrate 1.0; [Show] unmuted, [Practice] muted, [Reference] off
 --   record mode normal, repeat off
 --   "stop playback at end of loop if repeat is disabled" on
 --   no track or global override in a writing automation mode
@@ -56,6 +56,7 @@ for _, t in ipairs(live) do
 end
 U.setRate(1)
 U.applyBackingMutes("live")
+U.setReference(false)
 U.ensureOn("recNormal")
 R.GetSetRepeatEx(0, 0)
 U.ensureToggle("stopAtLoopEnd", true)

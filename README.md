@@ -30,7 +30,8 @@ players to record, arm/mute per player, tempo, Record / Play / Stop). Spec and m
 ## Project conventions
 
 - Track tags in names: `[Live]` input tracks (one per player), `[Show]` show-only backing,
-  `[Practice]` practice-only backing.
+  `[Practice]` practice-only backing, `[Reference]` the original song (muted; Practice's
+  Reference toggle solos it).
 - Ruler lanes named **Songs** (one region per song) and **Parts** (regions for intro, verse…).
 - Save the project, then on the page: Setup → **Mark as band project**, build the setlist,
   check Diagnostics.

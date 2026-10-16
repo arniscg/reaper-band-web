@@ -68,6 +68,9 @@ export const setPracticeOptions = (opts: { players?: string[]; rate?: number }) 
 export const setPlayerState = (players: string[], state: { armed?: boolean; muted?: boolean }) =>
   run('players', () => call('setPlayerState', { players, ...state }));
 
+/** Reference toggle: solo the [Reference] tracks, or unsolo and mute them again. */
+export const setReference = (on: boolean) => run('reference', () => call('setReference', { on }));
+
 /** Practice scope: a song, one part (toPartId null), or parts partId..toPartId. */
 export async function recordPractice(songId: string, partId: string | null, toPartId: string | null, prerollBars: number) {
   const r = await run('record', () => call('recordPractice', { songId, partId, toPartId, prerollBars }));

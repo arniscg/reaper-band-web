@@ -2,8 +2,8 @@ import { useEffect, useState } from 'preact/hooks';
 import { Header, Chip } from '../components/Header';
 import { Stepper } from '../components/Stepper';
 import { useStore } from '../state/store';
-import { fmtPercent, fmtTime, isArmed, isMuted, isRecordingState, isRunningState, liveTracks, partAt, songAt, songById } from '../state/derive';
-import { play, recordPractice, setPlayerState, setPracticeOptions, stop } from '../state/actions';
+import { fmtPercent, fmtTime, isArmed, isMuted, isRecordingState, isRunningState, liveTracks, partAt, referenceOn, songAt, songById } from '../state/derive';
+import { play, recordPractice, setPlayerState, setPracticeOptions, setReference, stop } from '../state/actions';
 import type { Song } from '../reaper/types';
 import styles from './Practice.module.css';
 
@@ -203,6 +203,10 @@ function TransportLine() {
   const part = partAt(song, pos);
   const rec = isRecordingState(state);
   const running = isRunningState(state);
+  // Reference: solo the original recording to compare with ours; works any time, also while playing.
+  const hasReference = st.tracks.some((t) => t.tags.includes('reference'));
+  const refOn = referenceOn(st);
+  const canRef = st.bridge === 'ready' && st.connection === 'online' && !st.busy;
 
   return (
     <div class={styles.transport}>
@@ -215,6 +219,11 @@ function TransportLine() {
           {song ? `${song.name}${part ? ` · ${part.name}` : ''}` : 'Outside any song'}
         </span>
         <span class={`${styles.time} num`}>{song ? fmtTime(pos - song.start) : fmtTime(pos)}</span>
+        {hasReference && (
+          <button class={`${styles.reference} ${refOn ? styles.referenceOn : ''}`} aria-pressed={refOn} disabled={!canRef} onClick={() => setReference(!refOn)}>
+            <HeadphonesIcon /> {refOn ? 'Reference on' : 'Reference'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -235,6 +244,16 @@ function MicIcon({ off }: { off: boolean }) {
       <rect x="9" y="3" width="6" height="11" rx="3" />
       <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
       {off && <path d="M4 4l16 16" />}
+    </svg>
+  );
+}
+
+function HeadphonesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" class={styles.strokeIcon}>
+      <path d="M4 16v-4a8 8 0 0 1 16 0v4" />
+      <rect x="3" y="14" width="4" height="6" rx="1.5" />
+      <rect x="17" y="14" width="4" height="6" rx="1.5" />
     </svg>
   );
 }
