@@ -152,12 +152,12 @@ The current mode, the players chosen for recording and the tempo are saved in th
 
 **Record.** One bridge call, the same pre-flight idea as Live minus the mode-specific checks:
 
-1. Chosen players armed and recording; all other `[Live]` tracks disarmed (and they stay disarmed afterwards), so their existing takes play back as a backing band. Mutes are left as they are.
+1. Chosen players armed and recording, with "monitor track media when recording" off, so they don't hear their own earlier takes; all other `[Live]` tracks disarmed (and they stay disarmed afterwards), so their existing takes play back as a backing band. Mutes are left as they are.
 2. Time selection = the part, the range of parts, or the whole song.
 3. Start position = the first part's start minus the pre-roll bars, converted with the tempo map, never before the song start. A whole-song take, or one starting with the song's first part, starts exactly at the start: no pre-roll, no count-in.
 4. Record. Auto-punch records only inside the selection; REAPER stops at its end (the same three layers as Live).
 
-**Play.** One bridge call: play the selected song or part with the same scope as Record (pre-roll; end of the part, range or song) at the current tempo. Nothing is armed, disarmed or muted: armed players play along, disarmed players just hear their takes. The newest recording is the active take, so it's what plays. Nothing is remembered between takes: the selection stays on screen, so recording again is just Record.
+**Play.** One bridge call: play the selected song or part with the same scope as Record (pre-roll; end of the part, range or song) at the current tempo. Arming and track mutes stay as they are: armed players play along live, so their own earlier takes in the play range are muted for this playback (unmuted again when it stops); disarmed players hear their takes. Only items the bridge muted are unmuted, and any it left muted (e.g. if the bridge stopped mid-play) are unmuted at the next Play, Record, Start or mode switch. The newest recording is the active take, so it's what plays. Nothing is remembered between takes: the selection stays on screen, so recording again is just Record.
 
 After a stop, REAPER returns the cursor to where the take started, so Play or Record repeats the same spot.
 
@@ -191,6 +191,7 @@ Start re-asserts everything it depends on, so no leftover setting can reach a sh
 | Needed REAPER actions found (by name; ids verified) | Refuse |
 | Free disk space on the record path above the minimum | Refuse |
 | All `[Live]` tracks armed, unmuted, record input on, monitoring on | Fix |
+| "Monitor track media when recording" off on `[Live]` tracks (earlier shows' takes at the same positions must not play along) | Fix |
 | Master playrate 1.0 | Fix |
 | `[Show]` unmuted, `[Practice]` muted | Fix |
 | Record mode normal, repeat off | Fix |

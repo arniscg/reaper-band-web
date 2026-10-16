@@ -3,7 +3,9 @@
 -- Practice Record: the same pre-flight idea as startLive minus the
 -- mode-specific checks (all refusals before any change), then:
 --   1. chosen players armed, everyone else disarmed (they stay disarmed
---      afterwards); mutes left as they are; rate applied
+--      afterwards); recorded tracks don't play their earlier takes along
+--      ("monitor track media when recording" off); mutes left as they are;
+--      rate applied
 --   2. time selection = the part, a range of parts, or the whole song
 --   3. start = part start minus pre-roll bars (tempo map), never before the
 --      song start. No pre-roll for a whole-song take or a part at the song
@@ -35,6 +37,7 @@ U.checkDisk(settings)
 
 local fixed = {}
 U.stopIfPlaying()
+U.unmuteMarkedTakes()
 
 U.applyBackingMutes("practice")
 U.armForRecording(opts.players)

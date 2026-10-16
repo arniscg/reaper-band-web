@@ -142,8 +142,61 @@ end
 -- they stay disarmed afterwards). Mutes are left as they are.
 function U.armForRecording(players)
   for _, t in ipairs(U.withTag(U.tracks(), "live")) do
-    U.arm(t.tr, U.contains(players, t.guid))
+    local recorded = U.contains(players, t.guid)
+    U.arm(t.tr, recorded)
+    if recorded then U.noTakesWhileRecording(t.tr) end
   end
+end
+
+-- A track being recorded must not play its earlier takes along: REAPER's
+-- per-track "monitor track media when recording" off.
+function U.noTakesWhileRecording(tr)
+  if R.GetMediaTrackInfo_Value(tr, "I_RECMONITEMS") ~= 0 then R.SetMediaTrackInfo_Value(tr, "I_RECMONITEMS", 0) end
+end
+
+---------------------------------------------------------------------------
+-- Silencing takes during Practice Play: armed players play live, so their
+-- own earlier takes in the play range are muted for that playback. Muted
+-- items are marked, so only those are unmuted afterwards (items muted by
+-- hand stay muted), and a bridge that died mid-play is cleaned up later.
+---------------------------------------------------------------------------
+
+local ITEM_MARK = "P_EXT:BandRemote_takeMuted"
+
+function U.muteTakesOfArmed(range_start, range_end)
+  local count = 0
+  for _, t in ipairs(U.withTag(U.tracks(), "live")) do
+    if R.GetMediaTrackInfo_Value(t.tr, "I_RECARM") ~= 0 then
+      for i = 0, R.CountTrackMediaItems(t.tr) - 1 do
+        local item = R.GetTrackMediaItem(t.tr, i)
+        local s = R.GetMediaItemInfo_Value(item, "D_POSITION")
+        local e = s + R.GetMediaItemInfo_Value(item, "D_LENGTH")
+        if s < range_end and e > range_start and R.GetMediaItemInfo_Value(item, "B_MUTE") == 0 then
+          R.SetMediaItemInfo_Value(item, "B_MUTE", 1)
+          R.GetSetMediaItemInfo_String(item, ITEM_MARK, "1", true)
+          count = count + 1
+        end
+      end
+    end
+  end
+  if count > 0 then R.UpdateArrange() end
+  return count
+end
+
+-- Unmute every item muted by muteTakesOfArmed (also leftovers from a crash).
+function U.unmuteMarkedTakes()
+  local count = 0
+  for i = 0, R.CountMediaItems(0) - 1 do
+    local item = R.GetMediaItem(0, i)
+    local _, mark = R.GetSetMediaItemInfo_String(item, ITEM_MARK, "", false)
+    if mark == "1" then
+      R.SetMediaItemInfo_Value(item, "B_MUTE", 0)
+      R.GetSetMediaItemInfo_String(item, ITEM_MARK, "", true)
+      count = count + 1
+    end
+  end
+  if count > 0 then R.UpdateArrange() end
+  return count
 end
 
 function U.setRate(rate)
@@ -396,6 +449,7 @@ end
 function U.endTake(take)
   R.GetSetProjectInfo(0, "PLAYBACK_STOP", take.prevPlaybackStop or 0, true)
   U.removeStopMarker()
+  U.unmuteMarkedTakes()
 end
 
 -- Undo values remembered in a take's restore list once it stops.

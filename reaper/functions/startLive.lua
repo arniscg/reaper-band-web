@@ -10,7 +10,8 @@
 --   refuse  a needed REAPER action can't be found
 --   refuse  free disk on the record path below settings.minDiskGB
 -- Then fixed silently:
---   all [Live] tracks armed, unmuted, record input on, monitoring on
+--   all [Live] tracks armed, unmuted, record input on, monitoring on,
+--   "monitor track media when recording" off (earlier shows don't play along)
 --   master playrate 1.0; [Show] unmuted, [Practice] muted
 --   record mode normal, repeat off
 --   "stop playback at end of loop if repeat is disabled" on
@@ -44,10 +45,12 @@ U.checkDisk(settings)
 
 local fixed = {}
 U.stopIfPlaying()
+U.unmuteMarkedTakes()
 
 local armed = {}
 for _, t in ipairs(live) do
   U.arm(t.tr, true)
+  U.noTakesWhileRecording(t.tr)
   U.mute(t.tr, false)
   armed[#armed + 1] = t.index
 end

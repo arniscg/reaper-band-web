@@ -27,6 +27,7 @@ local mode = args.mode
 if mode ~= "live" and mode ~= "practice" then error("Unknown mode: " .. tostring(mode), 0) end
 U.refuseWhileRecording("Changing mode")
 U.stopIfPlaying()
+U.unmuteMarkedTakes()
 
 U.applyBackingMutes(mode)
 if mode == "live" then

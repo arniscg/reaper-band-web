@@ -2,9 +2,10 @@
 --
 -- Practice Play: play the selected song, part or range of parts, with the same scope as
 -- Record (pre-roll, part or song end) at the current tempo.
--- Nothing is armed, disarmed or muted: live inputs stay as they are, so
--- players can play along or just listen to the takes. REAPER stops at the
--- end (stop marker / PLAYBACK_STOP), backed up by tick.
+-- Arming and track mutes stay as they are. Armed players play along live,
+-- so their own earlier takes in the range are muted for this playback (and
+-- unmuted by tick when it stops); disarmed players' takes play. REAPER stops
+-- at the end (stop marker / PLAYBACK_STOP), backed up by tick.
 --
 -- args:    { songId, partId (absent = whole song), toPartId (absent = just that
 --            part; else through the end of that part), prerollBars }
@@ -23,6 +24,8 @@ local to_part = part and U.findPart(song, args.toPartId) or nil
 local start, range_start, range_end = U.practiceScope(song, part, args.prerollBars, to_part)
 
 U.stopIfPlaying()
+U.unmuteMarkedTakes() -- leftovers, if a previous playback wasn't cleaned up
+U.muteTakesOfArmed(start, range_end)
 R.GetSetRepeatEx(0, 0)
 U.setRange(range_start, range_end)
 R.SetEditCurPos2(0, start, true, false)
